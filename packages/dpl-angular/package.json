@@ -1,0 +1,54 @@
+{
+  "name": "@designsystem/dpl-angular",
+  "version": "1.0.0",
+  "description": "DPL Angular Library",
+  "main": "dist/dpl-angular/index.js",
+  "types": "dist/dpl-angular/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "ng-packagr -p ng-package.json",
+    "dev": "ng serve",
+    "test": "ng test",
+    "lint": "ng lint"
+  },
+  "peerDependencies": {
+    "@angular/animations": "^20.0.0",
+    "@angular/common": "^20.0.0",
+    "@angular/compiler": "^20.0.0",
+    "@angular/core": "^20.0.0",
+    "@angular/forms": "^20.0.0",
+    "@angular/platform-browser": "^20.0.0",
+    "@angular/platform-browser-dynamic": "^20.0.0",
+    "rxjs": "^7.8.0",
+    "tslib": "^2.4.0",
+    "zone.js": "^0.15.0"
+  },
+  "devDependencies": {
+    "@angular-devkit/build-angular": "^20.0.0",
+    "@angular-eslint/builder": "^20.0.0",
+    "@angular-eslint/eslint-plugin": "^20.0.0",
+    "@angular-eslint/eslint-plugin-template": "^20.0.0",
+    "@angular-eslint/schematics": "^20.0.0",
+    "@angular-eslint/template-parser": "^20.0.0",
+    "@angular/animations": "^20.0.0",
+    "@angular/cli": "^20.0.0",
+    "@angular/common": "^20.0.0",
+    "@angular/compiler": "^20.0.0",
+    "@angular/compiler-cli": "^20.0.0",
+    "@angular/core": "^20.0.0",
+    "@angular/forms": "^20.0.0",
+    "@angular/platform-browser": "^20.0.0",
+    "@angular/platform-browser-dynamic": "^20.0.0",
+    "@types/node": "latest",
+    "eslint": "latest",
+    "ng-packagr": "^20.0.0",
+    "typescript": "latest"
+  },
+  "keywords": [
+    "dpl",
+    "angular",
+    "library"
+  ]
+}

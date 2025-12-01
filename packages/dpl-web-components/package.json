@@ -1,0 +1,38 @@
+{
+  "name": "@designsystem/dpl-web-components",
+  "version": "1.0.0",
+  "description": "DPL Web Components built with Stencil.js",
+  "main": "dist/index.cjs",
+  "module": "dist/index.es.js",
+  "es2015": "dist/es2015/index.mjs",
+  "es2017": "dist/es2017/index.mjs",
+  "types": "dist/types/index.d.ts",
+  "collection": "dist/collection/collection-manifest.json",
+  "collection:main": "dist/collection/index.js",
+  "unpkg": "dist/dpl-web-components/dpl-web-components.esm.js",
+  "files": [
+    "dist/"
+  ],
+  "scripts": {
+    "build": "stencil build --docs",
+    "dev": "stencil build --dev --watch --serve",
+    "test": "stencil test --spec",
+    "test:watch": "stencil test --spec --watch",
+    "lint": "eslint src/**/*.{ts,tsx}"
+  },
+  "devDependencies": {
+    "@stencil/angular-output-target": "^0.8.0",
+    "@stencil/core": "^4.0.0",
+    "@stencil/react-output-target": "^0.6.0",
+    "@types/jest": "latest",
+    "@types/node": "latest",
+    "eslint": "latest",
+    "jest": "latest",
+    "typescript": "latest"
+  },
+  "keywords": [
+    "dpl",
+    "web-components",
+    "stenciljs"
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "name": "nx-monorepo",
+  "version": "1.0.0",
+  "description": "Nx monorepo with Stencil.js and Angular packages",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "nx run-many --target=serve --all",
+    "build": "nx run-many --target=build --all",
+    "test": "nx run-many --target=test --all",
+    "lint": "nx run-many --target=lint --all"
+  },
+  "devDependencies": {
+    "@nrwl/nx-cloud": "latest",
+    "nx": "latest"
+  },
+  "packageManager": "pnpm@10.24.0+sha512.01ff8ae71b4419903b65c60fb2dc9d34cf8bb6e06d03bde112ef38f7a34d6904c424ba66bea5cdcf12890230bf39f9580473140ed9c946fef328b6e5238a345a"
+}
