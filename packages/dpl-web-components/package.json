@@ -10,8 +10,24 @@
   "collection": "dist/collection/collection-manifest.json",
   "collection:main": "dist/collection/index.js",
   "unpkg": "dist/dpl-web-components/dpl-web-components.esm.js",
+  "exports": {
+    ".": {
+        "types": "./dist/types/index.d.ts",
+        "import": "./dist/dpl-web-components/dpl-web-components.esm.js"
+    },
+    "./components": {
+        "import": "./components/index.js",
+        "types": "./components/index.d.ts"
+    },
+    "./components/*.js": {
+        "import": "./dist/components/*.js",
+        "types": "./dist/components/*.d.ts"
+    }
+  },
   "files": [
-    "dist/"
+    "dist/",
+    "loader/",
+    "www/"
   ],
   "scripts": {
     "build": "stencil build --docs",

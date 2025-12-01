@@ -11,15 +11,38 @@
 .DS_Store
 Thumbs.db
 
-# Dependencies
+# Dependencies (any level)
 node_modules/
+**/node_modules/
 
-# Build and dist
+# Build and distribution outputs (any level)
 dist/
+**/dist/
 build/
-coverage/
-.nx/
+**/build/
 out-tsc/
+**/out-tsc/
+dist-custom-elements/
+**/dist-custom-elements/
+dist/collection/
+.ng_package/
+loader/
+**/loader/
+
+# Angular / ng-packagr / nx outputs
+coverage/
+**/coverage/
+.nx/
+**/.nx/
+# Angular CLI cache
+.angular/
+**/.angular/
+**/.angular/cache/
+
+# Test & tooling
+karma.conf.js
+jest.config.js
+*.karma.conf.js
 
 # Environment variables
 .env
@@ -35,7 +58,16 @@ npm-debug.log*
 .DS_Store
 Thumbs.db
 
+# Misc temp
+tmp/
+**/tmp/
+temp/
+**/temp/
 
-# Output
-dist/
-**/dist/*
+# Editor swap and history
+*.swp
+*~
+
+# Keep local overrides out
+.vscode/
+.idea/

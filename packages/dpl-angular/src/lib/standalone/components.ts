@@ -4,10 +4,11 @@ import { ChangeDetectionStrategy, ChangeDetectorRef, Component, ElementRef, NgZo
 
 import { ProxyCmp } from './angular-component-lib/utils';
 
-import { Components } from '@dpl/web-components';
+import type { Components } from '@designsystem/dpl-web-components/components';
 
-
+import { defineCustomElement as defineDplButton } from '@designsystem/dpl-web-components/components/dpl-button.js';
 @ProxyCmp({
+  defineCustomElementFn: defineDplButton
 })
 @Component({
   selector: 'dpl-button',
@@ -15,6 +16,7 @@ import { Components } from '@dpl/web-components';
   template: '<ng-content></ng-content>',
   // eslint-disable-next-line @angular-eslint/no-inputs-metadata-property
   inputs: [],
+  standalone: true
 })
 export class DplButton {
   protected el: HTMLElement;

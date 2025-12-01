@@ -2,7 +2,6 @@
   "name": "@designsystem/dpl-angular",
   "projectType": "library",
   "sourceRoot": "src",
-  "prefix": "dpl",
   "tags": [],
   "projectNameAndRootFormat": "derived",
   "targets": {

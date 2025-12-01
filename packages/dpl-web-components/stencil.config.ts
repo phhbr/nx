@@ -19,9 +19,9 @@ export const config: Config = {
       serviceWorker: null,
     },
     angularOutputTarget({
-      componentCorePackage: '@dpl/web-components',
-      directivesProxyFile: '../dpl-angular/src/directives/stencil-generated.ts',
-      directivesArrayFile: '../dpl-angular/src/directives/index.ts',
+      componentCorePackage: '@designsystem/dpl-web-components',
+      outputType: 'standalone',
+      directivesProxyFile: '../dpl-angular/src/lib/standalone/components.ts',
     }),
   ],
   testing: {

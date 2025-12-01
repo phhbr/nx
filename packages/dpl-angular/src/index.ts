@@ -1,2 +1,2 @@
-export * from './directives';
+export * from './lib/standalone/components';
 export * from '@designsystem/dpl-web-components';
