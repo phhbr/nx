@@ -1,10 +1,11 @@
 import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
+import { DplButton } from '@designsystem/dpl-angular';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, DplButton],
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.css'],
 })

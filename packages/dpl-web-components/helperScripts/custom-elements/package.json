@@ -1,0 +1,7 @@
+{
+    "name": "@designsystem/dpl-web-components/components",
+    "version": "0.0.1",
+    "main": "./index.js",
+    "types": "./custom-elements.d.ts",
+    "sideEffects": false
+}

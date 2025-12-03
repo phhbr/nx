@@ -2,11 +2,17 @@
   "name": "@designsystem/dpl-angular",
   "version": "1.0.0",
   "description": "DPL Angular Library",
-  "main": "dist/dpl-angular/index.js",
-  "types": "dist/dpl-angular/index.d.ts",
+  "module": "dist/fesm2022/designsystem-dpl-angular.mjs",
+  "types": "dist/index.d.ts",
   "files": [
     "dist"
   ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/fesm2022/designsystem-dpl-angular.mjs"
+    }
+  },
   "scripts": {
     "build": "ng-packagr -p ng-package.json",
     "dev": "ng serve",

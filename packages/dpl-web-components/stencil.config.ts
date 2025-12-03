@@ -10,6 +10,15 @@ export const config: Config = {
     },
     {
       type: 'dist-custom-elements',
+      dir: 'components',
+      customElementsExportBehavior: 'single-export-module',
+      minify: true,
+      externalRuntime: false,
+      copy: [{
+        src: '../helperScripts/custom-elements',
+        dest: 'components',
+        warn: true
+      }],
     },
     {
       type: 'docs-readme',
