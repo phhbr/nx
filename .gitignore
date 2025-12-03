@@ -25,6 +25,7 @@ out-tsc/
 dist-custom-elements/
 **/dist-custom-elements/
 dist/collection/
+**/components/
 .ng_package/
 loader/
 **/loader/
