@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
-import { DplButton } from '@designsystem/dpl-angular';
+import { DplButton, SomeInterface } from '@designsystem/dpl-angular';
 
 @Component({
   selector: 'app-root',
@@ -11,4 +11,7 @@ import { DplButton } from '@designsystem/dpl-angular';
 })
 export class AppComponent {
   title = 'DPL Angular Demo';
+  randomProperty: SomeInterface = {
+    thisIsAProperty: 'Hello from SomeInterface!'
+  }
 }
