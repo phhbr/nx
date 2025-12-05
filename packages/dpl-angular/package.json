@@ -20,6 +20,8 @@
     "lint": "ng lint"
   },
   "peerDependencies": {
+    "@designsystem/dpl-web-components": "workspace:*",
+    "@storybook/addon-designs": "11.0.3",
     "@angular/animations": "^20.0.0",
     "@angular/common": "^20.0.0",
     "@angular/compiler": "^20.0.0",

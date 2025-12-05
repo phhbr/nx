@@ -4,6 +4,6 @@
   
   <section class="demo-section">
     <h2>Web Components</h2>
-    <dpl-button>{{ randomProperty.thisIsAProperty }}</dpl-button>
+    <dpl-button (buttonAction)="onEvent($event)">{{ randomProperty.thisIsAProperty }}</dpl-button>
   </section>
 </div>

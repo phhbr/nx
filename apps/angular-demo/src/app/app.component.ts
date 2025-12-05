@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
-import { DplButton, SomeInterface } from '@designsystem/dpl-angular';
+import { DplButton, SomeEventInterface, SomeInterface } from '@designsystem/dpl-angular';
 
 @Component({
   selector: 'app-root',
@@ -13,5 +13,8 @@ export class AppComponent {
   title = 'DPL Angular Demo';
   randomProperty: SomeInterface = {
     thisIsAProperty: 'Hello from SomeInterface!'
+  }
+  onEvent(event: CustomEvent<SomeEventInterface>) {
+    console.log('Received event:', event.detail);
   }
 }
