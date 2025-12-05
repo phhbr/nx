@@ -1,0 +1,51 @@
+{
+  "name": "dpl-web-components",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "library",
+  "sourceRoot": "packages/dpl-web-components/src",
+  "prefix": "dpl",
+  "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "stencil build --docs",
+        "cwd": "packages/dpl-web-components"
+      },
+      "dependsOn": [
+        {
+          "target": "export-interfaces"
+        }
+      ],
+      "cache": true
+    },
+    "dev": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "stencil build --dev --watch --serve"
+      },
+      "cache": false
+    },
+    "export-interfaces": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node helperScripts/export-interfaces.ts",
+        "cwd": "packages/dpl-web-components"
+      },
+      "cache": true
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "stencil test --spec"
+      },
+      "cache": true
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "eslint src/**/*.{ts,tsx}"
+      },
+      "cache": true
+    }
+  }
+}

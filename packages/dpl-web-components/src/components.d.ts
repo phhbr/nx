@@ -5,12 +5,29 @@
  * It contains typing information for all components that exist in this project.
  */
 import { HTMLStencilElement, JSXBase } from "@stencil/core/internal";
+import { SomeEventInterface } from "./interfaces/events/some-event-interface";
+export { SomeEventInterface } from "./interfaces/events/some-event-interface";
 export namespace Components {
     interface DplButton {
     }
 }
+export interface DplButtonCustomEvent<T> extends CustomEvent<T> {
+    detail: T;
+    target: HTMLDplButtonElement;
+}
 declare global {
+    interface HTMLDplButtonElementEventMap {
+        "buttonAction": SomeEventInterface;
+    }
     interface HTMLDplButtonElement extends Components.DplButton, HTMLStencilElement {
+        addEventListener<K extends keyof HTMLDplButtonElementEventMap>(type: K, listener: (this: HTMLDplButtonElement, ev: DplButtonCustomEvent<HTMLDplButtonElementEventMap[K]>) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener<K extends keyof DocumentEventMap>(type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | AddEventListenerOptions): void;
+        removeEventListener<K extends keyof HTMLDplButtonElementEventMap>(type: K, listener: (this: HTMLDplButtonElement, ev: DplButtonCustomEvent<HTMLDplButtonElementEventMap[K]>) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener<K extends keyof DocumentEventMap>(type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | EventListenerOptions): void;
     }
     var HTMLDplButtonElement: {
         prototype: HTMLDplButtonElement;
@@ -22,6 +39,7 @@ declare global {
 }
 declare namespace LocalJSX {
     interface DplButton {
+        "onButtonAction"?: (event: DplButtonCustomEvent<SomeEventInterface>) => void;
     }
     interface IntrinsicElements {
         "dpl-button": DplButton;

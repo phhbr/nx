@@ -1,8 +1,8 @@
 /* tslint:disable */
 /* auto-generated angular directive proxies */
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, ElementRef, NgZone } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, ElementRef, EventEmitter, NgZone } from '@angular/core';
 
-import { ProxyCmp } from './angular-component-lib/utils';
+import { ProxyCmp, proxyOutputs } from './angular-component-lib/utils';
 
 import type { Components } from '@designsystem/dpl-web-components/components';
 
@@ -23,10 +23,16 @@ export class DplButton {
   constructor(c: ChangeDetectorRef, r: ElementRef, protected z: NgZone) {
     c.detach();
     this.el = r.nativeElement;
+    proxyOutputs(this, this.el, ['buttonAction']);
   }
 }
 
 
-export declare interface DplButton extends Components.DplButton {}
+import type { SomeEventInterface as IDplButtonSomeEventInterface } from '@designsystem/dpl-web-components/components';
+
+export declare interface DplButton extends Components.DplButton {
+
+  buttonAction: EventEmitter<CustomEvent<IDplButtonSomeEventInterface>>;
+}
 
 

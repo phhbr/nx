@@ -2,7 +2,7 @@
   "name": "@designsystem/dpl-web-components",
   "version": "1.0.0",
   "description": "DPL Web Components built with Stencil.js",
-  "main": "dist/index.cjs",
+  "main": "dist/index.cjs.js",
   "module": "dist/index.es.js",
   "es2015": "dist/es2015/index.mjs",
   "es2017": "dist/es2017/index.mjs",
@@ -34,7 +34,8 @@
     "dev": "stencil build --dev --watch --serve",
     "test": "stencil test --spec",
     "test:watch": "stencil test --spec --watch",
-    "lint": "eslint src/**/*.{ts,tsx}"
+    "lint": "eslint src/**/*.{ts,tsx}",
+    "export-interfaces": "node helperScripts/export-interfaces.ts"
   },
   "devDependencies": {
     "@stencil/angular-output-target": "^0.8.0",
