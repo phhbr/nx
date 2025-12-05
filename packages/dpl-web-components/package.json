@@ -38,7 +38,7 @@
     "export-interfaces": "node helperScripts/export-interfaces.ts"
   },
   "devDependencies": {
-    "@stencil/angular-output-target": "^0.8.0",
+    "@stencil/angular-output-target": "^1.1.1",
     "@stencil/core": "^4.0.0",
     "@stencil/react-output-target": "^0.6.0",
     "@types/jest": "latest",
