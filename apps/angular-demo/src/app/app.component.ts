@@ -12,7 +12,8 @@ import { DplButton, SomeEventInterface, SomeInterface } from '@designsystem/dpl-
 export class AppComponent {
   title = 'DPL Angular Demo';
   randomProperty: SomeInterface = {
-    thisIsAProperty: 'Hello from SomeInterface!'
+    thisIsAProperty: 'Hello from SomeInterface!',
+    someComplexProperty: 'random'
   }
   onEvent(event: CustomEvent<SomeEventInterface>) {
     console.log('Received event:', event.detail);
