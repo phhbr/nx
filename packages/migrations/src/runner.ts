@@ -1,0 +1,144 @@
+import * as fs from 'fs';
+import * as path from 'path';
+import { glob } from 'glob';
+import * as semver from 'semver';
+import type { MigrationEntry, RunOptions, RunResult } from './types';
+
+/**
+ * Loads migrations from the manifest shipped inside @designsystem/dpl-web-components.
+ *
+ * The manifest is resolved via the package's exports map:
+ *   @designsystem/dpl-web-components/codemods/manifest
+ * → codemods/dist/manifest.js (CJS, compiled from codemods/manifest.ts)
+ *
+ * Each entry's transformPath is resolved relative to the manifest file,
+ * so the compiled transform modules are found at codemods/dist/transforms/...
+ */
+export function loadMigrationsFromManifest(): MigrationEntry[] {
+  const manifestPath = require.resolve(
+    '@designsystem/dpl-web-components/codemods/manifest',
+  );
+
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const manifestModule = require(manifestPath) as {
+    default: Array<{
+      version: string;
+      id: string;
+      description: string;
+      fileExtensions: string[];
+      transformPath: string;
+    }>;
+  };
+
+  const manifestDir = path.dirname(manifestPath);
+
+  return manifestModule.default.map((entry) => {
+    const absTransformPath = path.resolve(manifestDir, entry.transformPath);
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const transformModule = require(absTransformPath) as {
+      transform: (source: string, filePath: string) => string;
+    };
+    return {
+      version: entry.version,
+      id: entry.id,
+      description: entry.description,
+      fileExtensions: entry.fileExtensions,
+      transform: transformModule.transform,
+    };
+  });
+}
+
+/**
+ * Selects migrations that apply for the given from → to upgrade path.
+ *
+ * A migration at version V applies when: from < V <= to
+ * Results are sorted by version ascending (run older migrations first).
+ */
+export function selectMigrations(
+  all: MigrationEntry[],
+  from: string,
+  to: string,
+  only?: string[],
+): MigrationEntry[] {
+  return all
+    .filter((m) => {
+      const inRange = semver.gt(m.version, from) && semver.lte(m.version, to);
+      const inOnly = !only || only.length === 0 || only.includes(m.id);
+      return inRange && inOnly;
+    })
+    .sort((a, b) => semver.compare(a.version, b.version));
+}
+
+/**
+ * Applies the selected migrations to all matching files in options.dir.
+ *
+ * Pass injectedMigrations to override the manifest (used in tests to avoid
+ * depending on the compiled codemods package).
+ */
+export async function runMigrations(
+  options: RunOptions,
+  injectedMigrations?: MigrationEntry[],
+): Promise<RunResult> {
+  const { dir, from, to, dryRun = false, only } = options;
+
+  if (!semver.valid(from)) {
+    throw new Error(`Invalid --from version: "${from}"`);
+  }
+  if (!semver.valid(to)) {
+    throw new Error(`Invalid --to version: "${to}"`);
+  }
+
+  const allMigrations = injectedMigrations ?? loadMigrationsFromManifest();
+  const migrations = selectMigrations(allMigrations, from, to, only);
+
+  if (migrations.length === 0) {
+    console.log(`No migrations to apply for ${from} → ${to}.`);
+    return { filesScanned: 0, filesModified: 0, migrationsApplied: [] };
+  }
+
+  const allExtensions = [...new Set(migrations.flatMap((m) => m.fileExtensions))];
+  const extPart =
+    allExtensions.length === 1
+      ? allExtensions[0]
+      : `{${allExtensions.join(',')}}`;
+
+  const pattern = path.join(path.resolve(dir), `**/*.${extPart}`);
+  const files = await glob(pattern, {
+    ignore: ['**/node_modules/**', '**/dist/**'],
+    absolute: true,
+  });
+
+  let totalFilesModified = 0;
+  const migrationsApplied: RunResult['migrationsApplied'] = [];
+
+  for (const migration of migrations) {
+    const extSet = new Set(migration.fileExtensions);
+    const relevantFiles = files.filter((f) => extSet.has(path.extname(f).slice(1)));
+    let migrationFilesModified = 0;
+
+    for (const filePath of relevantFiles) {
+      const original = fs.readFileSync(filePath, 'utf8');
+      const transformed = migration.transform(original, filePath);
+
+      if (transformed !== original) {
+        migrationFilesModified++;
+        totalFilesModified++;
+
+        if (dryRun) {
+          console.log(`[dry-run] Would modify: ${filePath}  (${migration.id})`);
+        } else {
+          fs.writeFileSync(filePath, transformed, 'utf8');
+          console.log(`Modified: ${filePath}  (${migration.id})`);
+        }
+      }
+    }
+
+    migrationsApplied.push({ id: migration.id, filesModified: migrationFilesModified });
+  }
+
+  return {
+    filesScanned: files.length,
+    filesModified: totalFilesModified,
+    migrationsApplied,
+  };
+}

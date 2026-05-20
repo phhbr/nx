@@ -22,12 +22,17 @@
     "./components/*": {
         "import": "./components/*",
         "types": "./components/*.d.ts"
+    },
+    "./codemods/manifest": {
+        "require": "./codemods/dist/manifest.js",
+        "types": "./codemods/dist/manifest.d.ts"
     }
   },
   "files": [
     "dist/",
     "loader/",
-    "www/"
+    "www/",
+    "codemods/dist/"
   ],
   "scripts": {
     "build": "stencil build --docs",
@@ -35,7 +40,10 @@
     "test": "stencil test --spec",
     "test:watch": "stencil test --spec --watch",
     "lint": "eslint src/**/*.{ts,tsx}",
-    "export-interfaces": "node helperScripts/export-interfaces.ts"
+    "export-interfaces": "node helperScripts/export-interfaces.ts",
+    "codemods:build": "tsc -p codemods/tsconfig.cjs.json",
+    "codemods:test": "jest --config codemods/jest.config.cjs",
+    "codemods:run": "node codemods/dist/cli.js"
   },
   "devDependencies": {
     "@stencil/angular-output-target": "^1.1.1",
@@ -45,6 +53,8 @@
     "@types/node": "latest",
     "eslint": "latest",
     "jest": "latest",
+    "recast": "^0.23.11",
+    "ts-jest": "latest",
     "typescript": "latest"
   },
   "keywords": [

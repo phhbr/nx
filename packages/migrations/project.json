@@ -1,0 +1,31 @@
+{
+  "name": "migrations",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "library",
+  "sourceRoot": "packages/migrations/src",
+  "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc -p tsconfig.json",
+        "cwd": "packages/migrations"
+      },
+      "outputs": ["{projectRoot}/dist"],
+      "dependsOn": [
+        {
+          "projects": ["dpl-web-components"],
+          "target": "codemods:build"
+        }
+      ],
+      "cache": true
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "jest --config jest.config.cjs",
+        "cwd": "packages/migrations"
+      },
+      "cache": true
+    }
+  }
+}

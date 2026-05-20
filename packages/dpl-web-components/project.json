@@ -46,6 +46,32 @@
         "command": "eslint src/**/*.{ts,tsx}"
       },
       "cache": true
+    },
+    "codemods:build": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc -p codemods/tsconfig.cjs.json",
+        "cwd": "packages/dpl-web-components"
+      },
+      "outputs": ["{projectRoot}/codemods/dist"],
+      "cache": true
+    },
+    "codemods:test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "jest --config codemods/jest.config.cjs",
+        "cwd": "packages/dpl-web-components"
+      },
+      "dependsOn": ["codemods:build"],
+      "cache": true
+    },
+    "codemods:run": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node codemods/dist/cli.js",
+        "cwd": "packages/dpl-web-components"
+      },
+      "cache": false
     }
   }
 }
