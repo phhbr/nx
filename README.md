@@ -19,6 +19,7 @@ Web components library built with **Stencil.js**.
 - Generates TypeScript interfaces and type definitions
 - Exports component definitions for framework integration
 - Available at: `@designsystem/dpl-web-components/components`
+- Also ships versioned codemods under `./codemods/manifest` for upgrade-time migrations
 
 ### [@designsystem/dpl-angular](./packages/dpl-angular)
 Angular library providing wrapped components and re-exported interfaces.
@@ -26,6 +27,12 @@ Angular library providing wrapped components and re-exported interfaces.
 - Re-exports interfaces from `dpl-web-components` for type safety
 - Provides standalone Angular components
 - Available at: `@designsystem/dpl-angular`
+
+### [@designsystem/migrations](./packages/migrations)
+Version-aware migration CLI for `@designsystem/dpl-web-components`.
+- Loads codemods from `@designsystem/dpl-web-components/codemods/manifest`
+- Applies the right transform(s) for a `--from` → `--to` upgrade
+- Designed for consumer projects to run during upgrades
 
 ### [angular-demo](./apps/angular-demo)
 Demo Angular application showcasing the usage of wrapped components.

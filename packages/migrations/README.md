@@ -2,6 +2,14 @@
 
 Version-aware migration CLI for `@designsystem/dpl-web-components`. Run it once when upgrading between versions and it will automatically apply all the relevant codemods to your codebase.
 
+## What this package does
+
+- This package is the runner, not the transform source.
+- It parses `--from`, `--to`, `--dir`, and optional filters like `--only`.
+- It loads the codemod manifest from `@designsystem/dpl-web-components/codemods/manifest`.
+- It scans matching files and applies each selected transform in semver order.
+- The actual migration logic lives in `packages/dpl-web-components/codemods/`.
+
 ---
 
 ## Quickstart

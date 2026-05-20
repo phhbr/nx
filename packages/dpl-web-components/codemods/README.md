@@ -2,6 +2,12 @@
 
 Automated migration infrastructure for `@designsystem/dpl-web-components`. This document is for contributors adding or maintaining codemods. For consumer usage, see the [`@designsystem/migrations` README](../../migrations/README.md).
 
+## What lives where
+
+- `packages/dpl-web-components/codemods/` contains the migration payload: the manifest, individual transform implementations, shared utilities, and tests.
+- `packages/migrations/` contains the CLI/runtime that discovers those transforms and applies them to a consumer project.
+- The codemods are published from the web-components package so each breaking change ships alongside the component version that introduced it.
+
 ---
 
 ## Architecture
