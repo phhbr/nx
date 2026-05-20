@@ -5,10 +5,16 @@
  * It contains typing information for all components that exist in this project.
  */
 import { HTMLStencilElement, JSXBase } from "@stencil/core/internal";
-import { SomeEventInterface } from "./interfaces/events/some-event-interface";
-export { SomeEventInterface } from "./interfaces/events/some-event-interface";
+import { ITestButtonConfig, SomeEventInterface, SomeInterface } from "./interfaces";
+export { ITestButtonConfig, SomeEventInterface, SomeInterface } from "./interfaces";
 export namespace Components {
     interface DplButton {
+        "buttonConfig": ITestButtonConfig;
+        "complexProp": SomeInterface;
+        /**
+          * @default false
+         */
+        "disabled": boolean;
     }
 }
 export interface DplButtonCustomEvent<T> extends CustomEvent<T> {
@@ -39,6 +45,12 @@ declare global {
 }
 declare namespace LocalJSX {
     interface DplButton {
+        "buttonConfig": ITestButtonConfig;
+        "complexProp": SomeInterface;
+        /**
+          * @default false
+         */
+        "disabled"?: boolean;
         "onButtonAction"?: (event: DplButtonCustomEvent<SomeEventInterface>) => void;
     }
     interface IntrinsicElements {

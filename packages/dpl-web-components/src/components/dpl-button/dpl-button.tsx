@@ -1,5 +1,5 @@
-import { Component, EventEmitter, Event, h, State } from "@stencil/core";
-import { SomeEventInterface } from "../../interfaces/events/some-event-interface";
+import { Component, Event, EventEmitter, h, Prop, State } from "@stencil/core";
+import { SomeEventInterface, SomeInterface, ITestButtonConfig } from "../../interfaces/";
 
 @Component({
   tag: "dpl-button",
@@ -7,6 +7,9 @@ import { SomeEventInterface } from "../../interfaces/events/some-event-interface
   shadow: true,
 })
 export class DplButton {
+  @Prop() complexProp!: SomeInterface;
+  @Prop() buttonConfig!: ITestButtonConfig;
+  @Prop() disabled: boolean = false;
   @Event() buttonAction!: EventEmitter<SomeEventInterface>;
   @State() count: number = 0;
   render() {

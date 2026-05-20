@@ -1,5 +1,6 @@
 import { Config } from '@stencil/core';
 import { angularOutputTarget } from '@stencil/angular-output-target';
+import { readmeInterfacesGenerator } from './helperScripts/readme-interfaces-generator';
 
 export const config: Config = {
   namespace: 'dpl-web-components',
@@ -22,6 +23,11 @@ export const config: Config = {
     },
     {
       type: 'docs-readme',
+    },
+    {
+      type: 'custom',
+      name: 'interfaces readme',
+      generator: readmeInterfacesGenerator
     },
     {
       type: 'www',
