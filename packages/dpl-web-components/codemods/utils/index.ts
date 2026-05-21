@@ -9,7 +9,8 @@ type JSXOpeningElement = recast.types.namedTypes.JSXOpeningElement;
  * Uses recast for format-preserving AST transformation — only modified nodes
  * are reprinted; all other source formatting is left untouched.
  *
- * Skips JSXExpressionContainer values (dynamic bindings like variant={someVar}).
+ * Rewrites JSXExpressionContainer values when they contain matching
+ * string literals (e.g. variant={"outline"}).
  * Skips JSX spread attributes.
  * Skips member expression element names like <Foo.Bar>.
  */
@@ -56,6 +57,17 @@ export function replaceJsxStringAttr(
         ) {
           jsxAttr.value = recast.types.builders.stringLiteral(toValue);
           changed = true;
+          continue;
+        }
+
+        // Handles dynamic JSX bindings like variant={"outline"} and
+        // variant={isX ? 'outline' : 'solid'} by rewriting matching string literals
+        // inside the expression container.
+        if (jsxAttr.value?.type === 'JSXExpressionContainer') {
+          const container = jsxAttr.value as recast.types.namedTypes.JSXExpressionContainer;
+          if (replaceStringLiteralsInNode(container.expression, fromValue, toValue)) {
+            changed = true;
+          }
         }
       }
 
@@ -77,8 +89,8 @@ export function replaceJsxStringAttr(
  *   `attrName="toValue"`.
  *
  * Only operates inside opening tags — text content between tags is unaffected.
- * Does not affect Angular-style `[attr]="..."` or Vue `:attr="..."` bindings
- * because those use different attribute name prefixes.
+ * Also rewrites Angular-style `[attr]="..."` and Vue `:attr="..."` dynamic
+ * binding expressions when they contain quoted string literals equal to fromValue.
  */
 export function replaceHtmlAttr(
   source: string,
@@ -112,9 +124,106 @@ export function replaceHtmlAttr(
     'g',
   );
 
+  // Matches Angular/Vue dynamic bindings for the target attribute:
+  // [attrName]="..." or :attrName="..." (also supports single-quoted values).
+  const dynamicAttrRe = new RegExp(
+    `(\\s(?:\\[${escapeRegExp(attrName)}\\]|:${escapeRegExp(attrName)})\\s*=\\s*)("([^"]*)"|'([^']*)')`,
+    'g',
+  );
+
   return source.replace(openingTagRe, (fullMatch) => {
-    return fullMatch.replace(attrRe, `$1${toValue}$2`);
+    const withStaticReplacement = fullMatch.replace(attrRe, `$1${toValue}$2`);
+    return withStaticReplacement.replace(
+      dynamicAttrRe,
+      (_m, prefix: string, _quotedExpression: string, doubleExpr: string | undefined, singleExpr: string | undefined) => {
+        const expression = doubleExpr ?? singleExpr ?? '';
+        const nextExpression = replaceQuotedStringLiterals(expression, fromValue, toValue);
+        if (doubleExpr !== undefined) {
+          return `${prefix}"${nextExpression}"`;
+        }
+        return `${prefix}'${nextExpression}'`;
+      },
+    );
   });
+}
+
+/**
+ * Renames object property keys inside Angular/Vue dynamic bindings:
+ * [attrName]="..." / :attrName="...".
+ *
+ * This performs a conservative text rewrite for object-literal-like expressions:
+ *   - testInterface: value        -> newProperty: value
+ *   - "testInterface": value      -> "newProperty": value
+ *   - { testInterface, other: 1 } -> { newProperty: testInterface, other: 1 }
+ *
+ * If the binding does not contain a rewritable object key (e.g. [buttonConfig]="cfg"),
+ * a warning is emitted so developers can migrate manually.
+ */
+export function renameHtmlDynamicBindingObjectPropKey(
+  source: string,
+  tagNames: string[],
+  attrName: string,
+  fromKey: string,
+  toKey: string,
+  filePath?: string,
+  warn?: (message: string) => void,
+): string {
+  const tagAlternation = tagNames.join('|');
+
+  const openingTagRe = new RegExp(
+    `<(?:${tagAlternation})` +
+      `(?:[^>"'\`/]|"[^"]*"|'[^']*'|\`[^\`]*\`|/(?!>))*` +
+      `(?:/>|>)`,
+    'gs',
+  );
+
+  const dynamicAttrRe = new RegExp(
+    `(\\s(?:\\[${escapeRegExp(attrName)}\\]|:${escapeRegExp(attrName)})\\s*=\\s*)("([^"]*)"|'([^']*)')`,
+    'g',
+  );
+
+  let match: RegExpExecArray | null;
+  while ((match = openingTagRe.exec(source)) !== null) {
+    const originalTag = match[0];
+    let tagChanged = false;
+
+    const nextTag = originalTag.replace(
+      dynamicAttrRe,
+      (_m, prefix: string, _quotedExpression: string, doubleExpr: string | undefined, singleExpr: string | undefined) => {
+        const expression = doubleExpr ?? singleExpr ?? '';
+        const { value: nextExpression, changed: expressionChanged } =
+          renameObjectLiteralKeysInExpression(expression, fromKey, toKey);
+
+        if (!expressionChanged && warn) {
+          const lineNumber = source.substring(0, match!.index).split('\n').length;
+          const location = filePath
+            ? `${filePath}:${lineNumber}`
+            : `line ${lineNumber}`;
+          const elementName = originalTag.match(new RegExp(`^<(${tagAlternation})`))?.[1] ?? 'unknown';
+          warn(
+            `Manual migration needed at ${location} — ` +
+            `found dynamic [${attrName}] binding on <${elementName}>. ` +
+            `Could not safely rewrite expression; check for \`${fromKey}\` and rename to \`${toKey}\` manually.`,
+          );
+        }
+
+        if (expressionChanged) {
+          tagChanged = true;
+        }
+
+        if (doubleExpr !== undefined) {
+          return `${prefix}"${nextExpression}"`;
+        }
+        return `${prefix}'${nextExpression}'`;
+      },
+    );
+
+    if (!tagChanged) continue;
+    source = source.slice(0, match.index) + nextTag + source.slice(match.index + originalTag.length);
+    openingTagRe.lastIndex = match.index + nextTag.length;
+  }
+
+  return source;
 }
 
 /**
@@ -266,4 +375,73 @@ export function scanHtmlDynamicBindings(
 
 function escapeRegExp(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function replaceStringLiteralsInNode(
+  node: unknown,
+  fromValue: string,
+  toValue: string,
+): boolean {
+  if (!node || typeof node !== 'object') return false;
+
+  const n = node as Record<string, unknown>;
+  let changed = false;
+
+  if (n.type === 'StringLiteral' && n.value === fromValue) {
+    n.value = toValue;
+    return true;
+  }
+
+  if (Array.isArray(node)) {
+    for (const item of node) {
+      if (replaceStringLiteralsInNode(item, fromValue, toValue)) changed = true;
+    }
+    return changed;
+  }
+
+  for (const value of Object.values(n)) {
+    if (replaceStringLiteralsInNode(value, fromValue, toValue)) changed = true;
+  }
+
+  return changed;
+}
+
+function replaceQuotedStringLiterals(
+  expression: string,
+  fromValue: string,
+  toValue: string,
+): string {
+  const escaped = escapeRegExp(fromValue);
+  return expression
+    .replace(new RegExp(`"${escaped}"`, 'g'), `"${toValue}"`)
+    .replace(new RegExp(`'${escaped}'`, 'g'), `'${toValue}'`)
+    .replace(new RegExp(`\\x60${escaped}\\x60`, 'g'), `\`${toValue}\``);
+}
+
+function renameObjectLiteralKeysInExpression(
+  expression: string,
+  fromKey: string,
+  toKey: string,
+): { value: string; changed: boolean } {
+  let next = expression;
+
+  // Explicit object keys: testInterface: x / "testInterface": x / 'testInterface': x
+  const explicitKeyRe = new RegExp(
+    `(^|[,{]\\s*)((?:"${escapeRegExp(fromKey)}")|(?:'${escapeRegExp(fromKey)}')|${escapeRegExp(fromKey)})(?=\\s*:)`,
+    'g',
+  );
+  next = next.replace(explicitKeyRe, (_m, prefix: string, keyToken: string) => {
+    if (keyToken.startsWith('"')) return `${prefix}"${toKey}"`;
+    if (keyToken.startsWith("'")) return `${prefix}'${toKey}'`;
+    return `${prefix}${toKey}`;
+  });
+
+  // Shorthand keys: { testInterface, ... } -> { newProperty: testInterface, ... }
+  const shorthandRe = new RegExp(
+    `(^|[,{]\\s*)${escapeRegExp(fromKey)}(?=\\s*(,|}))`,
+    'g',
+  );
+  next = next.replace(shorthandRe, `$1${toKey}: ${fromKey}`);
+
+  return { value: next, changed: next !== expression };
 }

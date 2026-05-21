@@ -23,14 +23,22 @@ describe('rename testInterface → newProperty — identifier key', () => {
   });
 
   it('handles multiple dpl-button elements in one file', () => {
-    const input = [
-      `<dpl-button buttonConfig={{ testInterface: a, title: 'A', id: '1' }} />`,
-      `<dpl-button buttonConfig={{ testInterface: b, title: 'B', id: '2' }} />`,
-    ].join('\n');
-    const expected = [
-      `<dpl-button buttonConfig={{ newProperty: a, title: 'A', id: '1' }} />`,
-      `<dpl-button buttonConfig={{ newProperty: b, title: 'B', id: '2' }} />`,
-    ].join('\n');
+    const input = `function App() {
+  return (
+    <div>
+      <dpl-button buttonConfig={{ testInterface: a, title: 'A', id: '1' }} />
+      <dpl-button buttonConfig={{ testInterface: b, title: 'B', id: '2' }} />
+    </div>
+  );
+}`;
+    const expected = `function App() {
+  return (
+    <div>
+      <dpl-button buttonConfig={{ newProperty: a, title: 'A', id: '1' }} />
+      <dpl-button buttonConfig={{ newProperty: b, title: 'B', id: '2' }} />
+    </div>
+  );
+}`;
     expect(transformJsx(input)).toBe(expected);
   });
 });
@@ -120,10 +128,14 @@ describe('rename testInterface → newProperty — warns on variable reference',
   });
 
   it('emits one warning per non-inline reference found', () => {
-    const input = [
-      `<dpl-button buttonConfig={configA} />`,
-      `<dpl-button buttonConfig={configB} />`,
-    ].join('\n');
+    const input = `function App() {
+  return (
+    <div>
+      <dpl-button buttonConfig={configA} />
+      <dpl-button buttonConfig={configB} />
+    </div>
+  );
+}`;
     transformJsx(input, 'src/Page.tsx');
     expect(warnSpy).toHaveBeenCalledTimes(2);
   });
@@ -146,28 +158,26 @@ describe('rename testInterface → newProperty — warns on variable reference',
 });
 
 // ---------------------------------------------------------------------------
-// Warnings — HTML/Vue dynamic bindings
+// HTML/Vue dynamic bindings
 // ---------------------------------------------------------------------------
-describe('rename testInterface → newProperty — warns on HTML dynamic bindings', () => {
+describe('rename testInterface → newProperty — HTML/Vue dynamic bindings', () => {
   let warnSpy: jest.SpyInstance;
 
   beforeEach(() => { warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {}); });
   afterEach(() => { warnSpy.mockRestore(); });
 
-  it('emits a warning for Angular [buttonConfig]="..." binding on dpl-button', () => {
-    const input = `<dpl-button [buttonConfig]="someConfig"></dpl-button>`;
-    transformHtml(input, 'src/app.component.html');
-    expect(warnSpy).toHaveBeenCalledTimes(1);
-    expect(warnSpy.mock.calls[0][0]).toContain('src/app.component.html');
-    expect(warnSpy.mock.calls[0][0]).toContain('testInterface');
-    expect(warnSpy.mock.calls[0][0]).toContain('newProperty');
+  it('rewrites Angular [buttonConfig] object-literal keys', () => {
+    const input = `<dpl-button [buttonConfig]="{ testInterface: foo, title: 'T' }"></dpl-button>`;
+    const output = `<dpl-button [buttonConfig]="{ newProperty: foo, title: 'T' }"></dpl-button>`;
+    expect(transformHtml(input, 'src/app.component.html')).toBe(output);
+    expect(warnSpy).not.toHaveBeenCalled();
   });
 
-  it('emits a warning for Vue :buttonConfig="..." binding on dpl-button', () => {
-    const input = `<dpl-button :buttonConfig="someConfig"></dpl-button>`;
-    transformHtml(input, 'src/MyComponent.vue');
-    expect(warnSpy).toHaveBeenCalledTimes(1);
-    expect(warnSpy.mock.calls[0][0]).toContain('src/MyComponent.vue');
+  it('rewrites Vue :buttonConfig object-literal shorthand keys', () => {
+    const input = `<dpl-button :buttonConfig="{ testInterface, title: 'T' }"></dpl-button>`;
+    const output = `<dpl-button :buttonConfig="{ newProperty: testInterface, title: 'T' }"></dpl-button>`;
+    expect(transformHtml(input, 'src/MyComponent.vue')).toBe(output);
+    expect(warnSpy).not.toHaveBeenCalled();
   });
 
   it('does NOT warn for static buttonConfig="..." (not a dynamic binding)', () => {
@@ -182,8 +192,12 @@ describe('rename testInterface → newProperty — warns on HTML dynamic binding
     expect(warnSpy).not.toHaveBeenCalled();
   });
 
-  it('returns the source unchanged', () => {
+  it('warns when expression cannot be safely rewritten', () => {
     const input = `<dpl-button [buttonConfig]="someConfig"></dpl-button>`;
     expect(transformHtml(input, 'src/app.component.html')).toBe(input);
+    expect(warnSpy).toHaveBeenCalledTimes(1);
+    expect(warnSpy.mock.calls[0][0]).toContain('src/app.component.html');
+    expect(warnSpy.mock.calls[0][0]).toContain('testInterface');
+    expect(warnSpy.mock.calls[0][0]).toContain('newProperty');
   });
 });

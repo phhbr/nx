@@ -75,9 +75,16 @@ describe('transformJsx — no-op', () => {
     expect(transformJsx(input)).toBe(input);
   });
 
-  it('does NOT change dynamic variant={"outline"} expression container', () => {
+  it('changes dynamic variant={"outline"} expression container', () => {
     const input = `<dpl-button variant={"outline"} />`;
-    expect(transformJsx(input)).toBe(input);
+    const output = `<dpl-button variant={"ghost"} />`;
+    expect(transformJsx(input)).toBe(output);
+  });
+
+  it('changes string literals inside dynamic expressions for variant', () => {
+    const input = `<dpl-button variant={isPrimary ? "outline" : "solid"} />`;
+    const output = `<dpl-button variant={isPrimary ? "ghost" : "solid"} />`;
+    expect(transformJsx(input)).toBe(output);
   });
 
   it('does NOT change unrelated components that have variant="outline"', () => {
@@ -195,6 +202,18 @@ describe('transformHtml — no-op', () => {
   it('does NOT affect Angular-style property bindings', () => {
     const input = `<dpl-button [variant]="outline" />`;
     expect(transformHtml(input)).toBe(input);
+  });
+
+  it('rewrites Angular dynamic binding string literals', () => {
+    const input = `<dpl-button [variant]="'outline'" />`;
+    const output = `<dpl-button [variant]="'ghost'" />`;
+    expect(transformHtml(input)).toBe(output);
+  });
+
+  it('rewrites Vue dynamic binding string literals', () => {
+    const input = `<dpl-button :variant="isPrimary ? 'outline' : 'solid'" />`;
+    const output = `<dpl-button :variant="isPrimary ? 'ghost' : 'solid'" />`;
+    expect(transformHtml(input)).toBe(output);
   });
 });
 

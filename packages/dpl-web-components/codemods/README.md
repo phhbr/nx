@@ -14,8 +14,8 @@ Automated migration infrastructure for `@designsystem/dpl-web-components`. This 
 
 | Version | ID | File types | Description |
 | --- | --- | --- | --- |
-| v9.0.0 | `rename-dpl-button-variant-outline-to-ghost` | tsx, jsx, ts, js, html, vue | Renames `variant="outline"` → `variant="ghost"` on `<dpl-button>` and `<DplButton>` |
-| v9.0.0 | `rename-dpl-button-config-test-interface-to-new-property` | tsx, jsx (transform) + html, vue (warn) | Renames `ITestButtonConfig.testInterface` → `newProperty` in inline `buttonConfig` object literals |
+| v9.0.0 | `rename-dpl-button-variant-outline-to-ghost` | tsx, jsx, ts, js, html, vue | Renames variant outline → ghost on `<dpl-button>` and `<DplButton>`, including supported dynamic binding string-literals |
+| v9.0.0 | `rename-dpl-button-config-test-interface-to-new-property` | tsx, jsx, html, vue | Renames `ITestButtonConfig.testInterface` → `newProperty` in inline JSX object literals and rewritable Angular/Vue dynamic object-literal bindings |
 
 ---
 
@@ -139,7 +139,7 @@ export function transformHtml(source: string): string
 
 ### JSX/TSX path — `replaceJsxStringAttr`
 
-Uses `recast` with the `babel-ts` parser to walk the AST. Only `StringLiteral` attribute values are touched — `JSXExpressionContainer` (dynamic bindings like `variant={someVar}`) are skipped. Modified nodes are reprinted using `recast.types.builders.stringLiteral()`, which creates a fresh node without source-location metadata, forcing recast to reprint only that node while preserving all surrounding formatting.
+Uses `recast` with the `babel-ts` parser to walk the AST. Static `StringLiteral` attribute values are rewritten, and matching string literals inside `JSXExpressionContainer` values are also rewritten (for example `variant={"outline"}`). Modified nodes are reprinted using `recast.types.builders.stringLiteral()`, which creates a fresh node without source-location metadata, forcing recast to reprint only changed nodes while preserving surrounding formatting.
 
 ### HTML/Vue path — `replaceHtmlAttr`
 
@@ -148,7 +148,7 @@ Uses a two-pass regex strategy:
 1. **Outer regex** matches the complete opening tag for target elements (e.g. `<dpl-button ...>` or `<dpl-button .../>`), handling multi-line attributes and quoted `>` characters inside attribute values.
 2. **Inner regex** replaces the target attribute value within each matched tag only.
 
-This scopes the replacement to opening tags and never touches text content or other elements.
+This scopes the replacement to opening tags and never touches text content or other elements. Dynamic Angular/Vue bindings are also supported for safe string-literal rewrites inside `[attr]="..."` and `:attr="..."`.
 
 ---
 
@@ -196,7 +196,7 @@ Required test cases before a migration is considered production-ready:
 | --- | --- |
 | Primary transformation | Proves the codemod does what it says |
 | Already-migrated input (idempotency) | Running twice must not corrupt output |
-| Dynamic binding (`variant={someVar}`) | Must not touch runtime-determined values |
+| Dynamic binding (JSX / Angular / Vue) | Verify only safe literal/key rewrites happen; runtime references remain untouched |
 | Unrelated component with same attribute | Must be scoped to target elements only |
 | Multiple occurrences in one file | All instances must be updated |
 | HTML/template variant | If applicable — covers Angular and Vue consumers |
@@ -251,7 +251,7 @@ The `codemods/dist/` folder is included in the `files` array of `dpl-web-compone
 
 - **Be conservative.** Only transform what you can statically verify as a literal. If a value could be dynamic, do nothing.
 - **Idempotency.** `transform(transform(source)) === transform(source)` must always hold.
-- **No dynamic bindings.** Skip `variant={someVar}`, `:variant="..."`, `[variant]="..."`.
+- **Dynamic bindings are opt-in and conservative.** Rewrite only safe literal/key patterns. Leave uncertain expressions unchanged and warn.
 - **Scoped matching.** Regex transforms must operate inside opening tags only — never on text content, comments, or closing tags.
 - **Test no-ops first.** If your no-op tests fail, the transform is too broad. Fix that before the positive cases.
 - **Preserve formatting.** Use `recast` for JS/TS/JSX — it reprints only changed nodes. Avoid string-replacing the entire file.

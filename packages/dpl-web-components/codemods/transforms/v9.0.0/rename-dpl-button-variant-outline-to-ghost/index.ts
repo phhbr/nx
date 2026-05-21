@@ -13,10 +13,16 @@ import { replaceJsxStringAttr, replaceHtmlAttr } from '../../../utils/index';
  *   (DplButton is the Angular proxy component name exported from @designsystem/dpl-angular)
  *
  * What is NOT transformed:
- *   - variant={someVar}  (dynamic/expression bindings)
+ *   - variant={someVar}  (non-literal runtime bindings)
  *   - Other components that happen to have variant="outline"
  *   - Other props on dpl-button
  *   - Text content containing "outline"
+ *
+ * Dynamic bindings are partially supported:
+ *   - JSX: string literals inside expressions are rewritten
+ *     (e.g. variant={isA ? "outline" : "solid"} → ..."ghost"...)
+ *   - Angular/Vue templates: quoted string literals inside
+ *     [variant]="..." / :variant="..." are rewritten.
  */
 
 const TARGET_TAGS = ['dpl-button', 'DplButton'];
