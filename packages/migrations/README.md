@@ -90,6 +90,7 @@ npx migrations --from=8.0.0 --to=9.0.0 --dir=./src
 | From → To | ID | What it changes |
 | --- | --- | --- |
 | < 9.0.0 → ≥ 9.0.0 | `rename-dpl-button-variant-outline-to-ghost` | Renames `variant="outline"` → `variant="ghost"` on `<dpl-button>` and `<DplButton>` |
+| < 9.0.0 → ≥ 9.0.0 | `rename-dpl-button-config-test-interface-to-new-property` | Renames `ITestButtonConfig.testInterface` → `newProperty` in inline `buttonConfig={{ ... }}` JSX object literals |
 
 ### File types supported
 

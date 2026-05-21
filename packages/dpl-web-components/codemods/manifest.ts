@@ -36,6 +36,15 @@ const manifest: CodemodEntry[] = [
     transformPath:
       './transforms/v9.0.0/rename-dpl-button-variant-outline-to-ghost/index',
   },
+  {
+    version: '9.0.0',
+    id: 'rename-dpl-button-config-test-interface-to-new-property',
+    description:
+      'Renames ITestButtonConfig.testInterface to newProperty in inline buttonConfig object literals on <dpl-button> and <DplButton>.',
+    fileExtensions: ['tsx', 'jsx'],
+    transformPath:
+      './transforms/v9.0.0/rename-dpl-button-config-test-interface-to-new-property/index',
+  },
 ];
 
 export default manifest;

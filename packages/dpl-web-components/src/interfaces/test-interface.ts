@@ -1,4 +1,5 @@
 import { SomeInterface } from "./some-interface";
+import { SomeNewInterface } from "./some-new-interface";
 
 /**
  * Test Interface für die Interfaces README Generator
@@ -25,5 +26,10 @@ export interface ITestButtonConfig {
    */
   allowedActions?: string[];
 
-  testInterface: SomeInterface; // hier ist dokumentation
+  /**
+   * @deprecated Diese Eigenschaft ist veraltet und wird zukünftig durch "newProperty" ersetzt. Bitte verwenden Sie stattdessen "newProperty".
+   */
+  testInterface?: SomeInterface; // hier ist dokumentation
+
+  newProperty: SomeNewInterface; // hier ist dokumentation
 }

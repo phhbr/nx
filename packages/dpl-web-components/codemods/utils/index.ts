@@ -117,6 +117,87 @@ export function replaceHtmlAttr(
   });
 }
 
+/**
+ * Renames an object property key inside a JSX expression-container attribute
+ * on specific element tags.
+ *
+ * Targets only inline object literals passed as JSX expression containers,
+ * e.g. `<dpl-button buttonConfig={{ testInterface: x }} />`.
+ * Variable references like `buttonConfig={someVar}` are never touched because
+ * the object's type cannot be verified without a full type-checker.
+ *
+ * Handles both identifier keys (`testInterface: x`) and string-literal keys
+ * (`"testInterface": x`). Correctly expands shorthand properties:
+ * `{ testInterface }` → `{ newProperty: testInterface }`.
+ *
+ * Skips computed keys (`{ [expr]: x }`) entirely.
+ */
+export function renameJsxObjectPropKey(
+  source: string,
+  tagNames: string[],
+  attrName: string,
+  fromKey: string,
+  toKey: string,
+): string {
+  const ast = recast.parse(source, {
+    parser: require('recast/parsers/babel-ts'),
+  });
+  const tagSet = new Set(tagNames);
+  let changed = false;
+
+  recast.visit(ast, {
+    visitJSXOpeningElement(path) {
+      const node = path.node as JSXOpeningElement;
+      const name = node.name;
+
+      let localName: string | null = null;
+      if (name.type === 'JSXIdentifier') localName = name.name;
+      if (!localName || !tagSet.has(localName)) return this.traverse(path);
+
+      for (const attr of node.attributes ?? []) {
+        if (attr.type !== 'JSXAttribute') continue;
+        const jsxAttr = attr as JSXAttribute;
+        if (
+          jsxAttr.name.type !== 'JSXIdentifier' ||
+          jsxAttr.name.name !== attrName
+        ) continue;
+
+        if (!jsxAttr.value || jsxAttr.value.type !== 'JSXExpressionContainer') continue;
+
+        const container = jsxAttr.value as recast.types.namedTypes.JSXExpressionContainer;
+        if (!container.expression || container.expression.type !== 'ObjectExpression') continue;
+
+        const objExpr = container.expression as recast.types.namedTypes.ObjectExpression;
+        for (const prop of objExpr.properties) {
+          if (prop.type !== 'ObjectProperty' && prop.type !== 'Property') continue;
+          const p = prop as any;
+          if (p.computed) continue;
+
+          const key = p.key;
+          const keyMatches =
+            (key.type === 'Identifier' && key.name === fromKey) ||
+            (key.type === 'StringLiteral' && key.value === fromKey);
+          if (!keyMatches) continue;
+
+          if (p.shorthand) {
+            p.key = recast.types.builders.identifier(toKey);
+            p.value = recast.types.builders.identifier(fromKey);
+            p.shorthand = false;
+          } else {
+            p.key = recast.types.builders.identifier(toKey);
+          }
+          changed = true;
+        }
+      }
+
+      this.traverse(path);
+    },
+  });
+
+  if (!changed) return source;
+  return recast.print(ast).code;
+}
+
 function escapeRegExp(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
