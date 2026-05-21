@@ -15,7 +15,7 @@ Automated migration infrastructure for `@designsystem/dpl-web-components`. This 
 | Version | ID | File types | Description |
 | --- | --- | --- | --- |
 | v9.0.0 | `rename-dpl-button-variant-outline-to-ghost` | tsx, jsx, ts, js, html, vue | Renames `variant="outline"` → `variant="ghost"` on `<dpl-button>` and `<DplButton>` |
-| v9.0.0 | `rename-dpl-button-config-test-interface-to-new-property` | tsx, jsx | Renames `ITestButtonConfig.testInterface` → `newProperty` in inline `buttonConfig` object literals |
+| v9.0.0 | `rename-dpl-button-config-test-interface-to-new-property` | tsx, jsx (transform) + html, vue (warn) | Renames `ITestButtonConfig.testInterface` → `newProperty` in inline `buttonConfig` object literals |
 
 ---
 

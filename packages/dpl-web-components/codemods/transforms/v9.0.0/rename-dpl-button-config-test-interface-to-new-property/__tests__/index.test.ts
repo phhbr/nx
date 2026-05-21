@@ -1,4 +1,4 @@
-import { transformJsx } from '../index';
+import { transformJsx, transformHtml } from '../index';
 
 // ---------------------------------------------------------------------------
 // Primary transformation — identifier key
@@ -93,5 +93,97 @@ describe('rename testInterface → newProperty — no-op', () => {
     expect(output).toContain("title: 'Keep'");
     expect(output).toContain("id: '42'");
     expect(output).toContain('isActive: true');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Warnings — JSX variable references
+// ---------------------------------------------------------------------------
+describe('rename testInterface → newProperty — warns on variable reference', () => {
+  let warnSpy: jest.SpyInstance;
+
+  beforeEach(() => { warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {}); });
+  afterEach(() => { warnSpy.mockRestore(); });
+
+  it('emits a warning when buttonConfig is a variable reference', () => {
+    transformJsx(`<dpl-button buttonConfig={someConfig} />`, 'src/Button.tsx');
+    expect(warnSpy).toHaveBeenCalledTimes(1);
+    expect(warnSpy.mock.calls[0][0]).toContain('src/Button.tsx');
+    expect(warnSpy.mock.calls[0][0]).toContain('testInterface');
+    expect(warnSpy.mock.calls[0][0]).toContain('newProperty');
+  });
+
+  it('emits a warning for a function call reference', () => {
+    transformJsx(`<dpl-button buttonConfig={buildConfig()} />`, 'src/Form.tsx');
+    expect(warnSpy).toHaveBeenCalledTimes(1);
+    expect(warnSpy.mock.calls[0][0]).toContain('src/Form.tsx');
+  });
+
+  it('emits one warning per non-inline reference found', () => {
+    const input = [
+      `<dpl-button buttonConfig={configA} />`,
+      `<dpl-button buttonConfig={configB} />`,
+    ].join('\n');
+    transformJsx(input, 'src/Page.tsx');
+    expect(warnSpy).toHaveBeenCalledTimes(2);
+  });
+
+  it('does NOT warn for inline object literals (those are auto-transformed)', () => {
+    transformJsx(`<dpl-button buttonConfig={{ testInterface: foo }} />`, 'src/Button.tsx');
+    expect(warnSpy).not.toHaveBeenCalled();
+  });
+
+  it('does NOT warn for unrelated components with a non-inline buttonConfig', () => {
+    transformJsx(`<SomeOther buttonConfig={someConfig} />`, 'src/Other.tsx');
+    expect(warnSpy).not.toHaveBeenCalled();
+  });
+
+  it('includes the line number in the warning when available', () => {
+    const input = `const x = 1;\n<dpl-button buttonConfig={someConfig} />`;
+    transformJsx(input, 'src/Button.tsx');
+    expect(warnSpy.mock.calls[0][0]).toMatch(/src\/Button\.tsx:\d+/);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Warnings — HTML/Vue dynamic bindings
+// ---------------------------------------------------------------------------
+describe('rename testInterface → newProperty — warns on HTML dynamic bindings', () => {
+  let warnSpy: jest.SpyInstance;
+
+  beforeEach(() => { warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {}); });
+  afterEach(() => { warnSpy.mockRestore(); });
+
+  it('emits a warning for Angular [buttonConfig]="..." binding on dpl-button', () => {
+    const input = `<dpl-button [buttonConfig]="someConfig"></dpl-button>`;
+    transformHtml(input, 'src/app.component.html');
+    expect(warnSpy).toHaveBeenCalledTimes(1);
+    expect(warnSpy.mock.calls[0][0]).toContain('src/app.component.html');
+    expect(warnSpy.mock.calls[0][0]).toContain('testInterface');
+    expect(warnSpy.mock.calls[0][0]).toContain('newProperty');
+  });
+
+  it('emits a warning for Vue :buttonConfig="..." binding on dpl-button', () => {
+    const input = `<dpl-button :buttonConfig="someConfig"></dpl-button>`;
+    transformHtml(input, 'src/MyComponent.vue');
+    expect(warnSpy).toHaveBeenCalledTimes(1);
+    expect(warnSpy.mock.calls[0][0]).toContain('src/MyComponent.vue');
+  });
+
+  it('does NOT warn for static buttonConfig="..." (not a dynamic binding)', () => {
+    const input = `<dpl-button buttonConfig="staticValue"></dpl-button>`;
+    transformHtml(input, 'src/app.component.html');
+    expect(warnSpy).not.toHaveBeenCalled();
+  });
+
+  it('does NOT warn for dynamic bindings on unrelated components', () => {
+    const input = `<some-other [buttonConfig]="someConfig"></some-other>`;
+    transformHtml(input, 'src/app.component.html');
+    expect(warnSpy).not.toHaveBeenCalled();
+  });
+
+  it('returns the source unchanged', () => {
+    const input = `<dpl-button [buttonConfig]="someConfig"></dpl-button>`;
+    expect(transformHtml(input, 'src/app.component.html')).toBe(input);
   });
 });

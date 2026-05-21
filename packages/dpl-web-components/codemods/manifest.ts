@@ -41,7 +41,7 @@ const manifest: CodemodEntry[] = [
     id: 'rename-dpl-button-config-test-interface-to-new-property',
     description:
       'Renames ITestButtonConfig.testInterface to newProperty in inline buttonConfig object literals on <dpl-button> and <DplButton>.',
-    fileExtensions: ['tsx', 'jsx'],
+    fileExtensions: ['tsx', 'jsx', 'html', 'vue'],
     transformPath:
       './transforms/v9.0.0/rename-dpl-button-config-test-interface-to-new-property/index',
   },

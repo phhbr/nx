@@ -125,6 +125,8 @@ export function replaceHtmlAttr(
  * e.g. `<dpl-button buttonConfig={{ testInterface: x }} />`.
  * Variable references like `buttonConfig={someVar}` are never touched because
  * the object's type cannot be verified without a full type-checker.
+ * When such a reference is encountered, `warn` is called with the file path
+ * and source line so the developer knows where to look.
  *
  * Handles both identifier keys (`testInterface: x`) and string-literal keys
  * (`"testInterface": x`). Correctly expands shorthand properties:
@@ -138,6 +140,8 @@ export function renameJsxObjectPropKey(
   attrName: string,
   fromKey: string,
   toKey: string,
+  filePath?: string,
+  warn?: (message: string) => void,
 ): string {
   const ast = recast.parse(source, {
     parser: require('recast/parsers/babel-ts'),
@@ -162,10 +166,26 @@ export function renameJsxObjectPropKey(
           jsxAttr.name.name !== attrName
         ) continue;
 
+        // Not an expression container at all (e.g. boolean attr) — skip silently.
         if (!jsxAttr.value || jsxAttr.value.type !== 'JSXExpressionContainer') continue;
 
         const container = jsxAttr.value as recast.types.namedTypes.JSXExpressionContainer;
-        if (!container.expression || container.expression.type !== 'ObjectExpression') continue;
+
+        if (!container.expression || container.expression.type !== 'ObjectExpression') {
+          // Variable reference, function call, ternary, etc. — cannot auto-migrate.
+          if (warn) {
+            const loc = (jsxAttr as any).loc;
+            const location = filePath
+              ? `${filePath}${loc ? `:${loc.start.line}` : ''}`
+              : loc ? `line ${loc.start.line}` : 'unknown location';
+            warn(
+              `Manual migration needed at ${location} — ` +
+              `<${localName} ${attrName}={...}> uses a non-inline value. ` +
+              `Check if the referenced object contains \`${fromKey}\` and rename it to \`${toKey}\` manually.`,
+            );
+          }
+          continue;
+        }
 
         const objExpr = container.expression as recast.types.namedTypes.ObjectExpression;
         for (const prop of objExpr.properties) {
@@ -196,6 +216,52 @@ export function renameJsxObjectPropKey(
 
   if (!changed) return source;
   return recast.print(ast).code;
+}
+
+/**
+ * Scans an HTML or Vue SFC file for dynamic attribute bindings
+ * (Angular `[attrName]="..."` or Vue `:attrName="..."`) on target elements
+ * and calls `warn` for each match.
+ *
+ * Does not modify the source — purely advisory. Used by migrations that cannot
+ * safely rewrite Angular/Vue template expressions without a full framework parser.
+ */
+export function scanHtmlDynamicBindings(
+  source: string,
+  tagNames: string[],
+  attrName: string,
+  filePath: string,
+  warn: (message: string) => void,
+): void {
+  const tagAlternation = tagNames.join('|');
+
+  // Match complete opening tags for target elements, same strategy as replaceHtmlAttr.
+  const openingTagRe = new RegExp(
+    `<(?:${tagAlternation})` +
+      `(?:[^>"'\`/]|"[^"]*"|'[^']*'|\`[^\`]*\`|/(?!>))*` +
+      `(?:/>|>)`,
+    'gs',
+  );
+
+  // Angular [attrName]="..." or Vue :attrName="..."
+  const dynamicAttrRe = new RegExp(
+    `(?:\\[${escapeRegExp(attrName)}\\]|:${escapeRegExp(attrName)})\\s*=\\s*["'][^"']*["']`,
+    'g',
+  );
+
+  let match: RegExpExecArray | null;
+  while ((match = openingTagRe.exec(source)) !== null) {
+    if (!dynamicAttrRe.test(match[0])) continue;
+    dynamicAttrRe.lastIndex = 0; // reset after .test()
+
+    const lineNumber = source.substring(0, match.index).split('\n').length;
+    warn(
+      `Manual migration needed at ${filePath}:${lineNumber} — ` +
+      `found dynamic [${attrName}] binding on <${match[0].match(new RegExp(`^<(${tagAlternation})`))?.[1]}>. ` +
+      `Angular/Vue template bindings cannot be auto-migrated. ` +
+      `Check if the bound object contains \`testInterface\` and rename it to \`newProperty\` manually.`,
+    );
+  }
 }
 
 function escapeRegExp(s: string): string {
