@@ -1,4 +1,5 @@
-import { replaceJsxStringAttr, replaceHtmlAttr } from '../../../utils/index';
+import { replaceJsxStringAttr } from '../../../utils/jsx';
+import { replaceHtmlAttr } from '../../../utils/html';
 
 /**
  * Migration: rename-dpl-button-variant-outline-to-ghost (v9.0.0)

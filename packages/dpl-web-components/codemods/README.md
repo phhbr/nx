@@ -108,7 +108,9 @@ codemods/
 ├── tsconfig.cjs.json       ← compiles codemods/ → codemods/dist/ (CommonJS, no __tests__)
 ├── cli.ts                  ← direct per-transform runner (--transform <id> --dir <path>)
 ├── utils/
-│   └── index.ts            ← replaceJsxStringAttr() and replaceHtmlAttr() shared utilities
+│   ├── common.ts           ← shared helpers like escapeRegExp()
+│   ├── html.ts             ← HTML/Vue template helpers
+│   └── jsx.ts              ← JSX/TSX AST helpers
 └── transforms/
     └── v9.0.0/
         └── rename-dpl-button-variant-outline-to-ghost/
@@ -166,7 +168,8 @@ touch codemods/transforms/vX.Y.Z/your-migration-id/__tests__/index.test.ts
 **`index.ts` skeleton:**
 
 ```typescript
-import { replaceJsxStringAttr, replaceHtmlAttr } from '../../../utils/index';
+import { replaceJsxStringAttr } from '../../../utils/jsx';
+import { replaceHtmlAttr } from '../../../utils/html';
 
 const TARGET_TAGS = ['dpl-my-component', 'DplMyComponent'];
 const ATTR_NAME = 'old-prop';

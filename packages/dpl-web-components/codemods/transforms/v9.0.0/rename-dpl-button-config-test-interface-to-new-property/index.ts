@@ -1,7 +1,5 @@
-import {
-  renameHtmlDynamicBindingObjectPropKey,
-  renameJsxObjectPropKey,
-} from '../../../utils/index';
+import { renameHtmlDynamicBindingObjectPropKey } from '../../../utils/html';
+import { renameJsxObjectPropKey as renameJsxObjectPropKeyFromJsx } from '../../../utils/jsx';
 
 /**
  * Codemod: rename-dpl-button-config-test-interface-to-new-property
@@ -29,7 +27,7 @@ const FROM_KEY = 'testInterface';
 const TO_KEY = 'newProperty';
 
 export function transformJsx(source: string, filePath?: string): string {
-  return renameJsxObjectPropKey(
+  return renameJsxObjectPropKeyFromJsx(
     source, TARGET_TAGS, ATTR_NAME, FROM_KEY, TO_KEY,
     filePath, console.warn,
   );

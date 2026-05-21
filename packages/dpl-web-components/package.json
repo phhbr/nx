@@ -46,6 +46,7 @@
     "codemods:run": "node codemods/dist/cli.js"
   },
   "devDependencies": {
+    "@babel/parser": "^7.28.0",
     "@stencil/angular-output-target": "^1.1.1",
     "@stencil/core": "^4.0.0",
     "@stencil/react-output-target": "^0.6.0",
