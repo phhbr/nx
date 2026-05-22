@@ -192,8 +192,13 @@ async function main(): Promise<void> {
 
       // 3. Validate fixtures
       formatter.debug(`Validating fixtures for: ${entry.id}`);
-      const transformDir = path.dirname(transformPath);
-      const fixturesResult = validateFixtures(transformDir);
+      const sourceTransformPath = path.resolve(
+        manifestDir,
+        '..',
+        entry.transformPath + '.ts',
+      );
+      const sourceTransformDir = path.dirname(sourceTransformPath);
+      const fixturesResult = validateFixtures(sourceTransformDir);
       transformResults.push({ id: entry.id, result: fixturesResult, type: 'fixtures' });
 
       if (!fixturesResult.valid) {
