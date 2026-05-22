@@ -10,6 +10,7 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
+import { describe, expect, it } from '@jest/globals';
 import { transform } from '../index';
 
 const FIXTURES = path.join(__dirname, 'fixtures');
