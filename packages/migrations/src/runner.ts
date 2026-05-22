@@ -4,6 +4,16 @@ import { glob } from 'glob';
 import * as semver from 'semver';
 import type { MigrationEntry, RunOptions, RunResult } from './types';
 
+function normalizeExtension(ext: string): string {
+  const trimmed = ext.trim().toLowerCase();
+  if (!trimmed) return '';
+  return trimmed.startsWith('.') ? trimmed.slice(1) : trimmed;
+}
+
+function normalizeExtensions(exts: string[]): string[] {
+  return [...new Set(exts.map(normalizeExtension).filter(Boolean))];
+}
+
 /**
  * Loads migrations from the manifest shipped inside @designsystem/dpl-web-components.
  *
@@ -96,7 +106,7 @@ export async function runMigrations(
     return { filesScanned: 0, filesModified: 0, migrationsApplied: [] };
   }
 
-  const allExtensions = [...new Set(migrations.flatMap((m) => m.fileExtensions))];
+  const allExtensions = normalizeExtensions(migrations.flatMap((m) => m.fileExtensions));
   const extPart =
     allExtensions.length === 1
       ? allExtensions[0]
@@ -112,8 +122,8 @@ export async function runMigrations(
   const migrationsApplied: RunResult['migrationsApplied'] = [];
 
   for (const migration of migrations) {
-    const extSet = new Set(migration.fileExtensions);
-    const relevantFiles = files.filter((f) => extSet.has(path.extname(f).slice(1)));
+    const extSet = new Set(normalizeExtensions(migration.fileExtensions));
+    const relevantFiles = files.filter((f) => extSet.has(normalizeExtension(path.extname(f))));
     let migrationFilesModified = 0;
 
     for (const filePath of relevantFiles) {

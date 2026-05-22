@@ -120,9 +120,12 @@ async function main(): Promise<void> {
     });
 
     let manifest: any;
+    let manifestDir = __dirname;
     try {
+      const manifestPath = require.resolve('./manifest');
+      manifestDir = path.dirname(manifestPath);
       // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const manifestModule = require('./manifest');
+      const manifestModule = require(manifestPath);
       manifest = manifestModule.default;
     } catch (e) {
       formatter.error('Failed to load manifest', {
@@ -136,7 +139,7 @@ async function main(): Promise<void> {
 
     // 1. Validate manifest
     formatter.debug('Validating manifest structure...');
-    const manifestResult = validateManifest(manifest, '.');
+    const manifestResult = validateManifest(manifest, manifestDir);
 
     let hasErrors = false;
     if (!manifestResult.valid) {
@@ -162,8 +165,8 @@ async function main(): Promise<void> {
     for (const entry of manifest) {
       if (args.transform && entry.id !== args.transform) continue;
 
-      const transformPath = path.resolve('.', entry.transformPath + '.ts');
-      const transformDist = path.resolve('.', entry.transformPath + '.js');
+      const transformPath = path.resolve(manifestDir, entry.transformPath + '.ts');
+      const transformDist = path.resolve(manifestDir, entry.transformPath + '.js');
 
       // Try to load compiled version first, then source
       const toValidate = fs.existsSync(transformDist) ? transformDist : transformPath;

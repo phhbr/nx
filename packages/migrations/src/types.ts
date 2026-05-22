@@ -6,7 +6,7 @@ export interface MigrationEntry {
   id: string;
   /** Human-readable summary shown in dry-run output. */
   description: string;
-  /** File extensions this migration applies to (without leading dot). */
+  /** File extensions this migration applies to (with or without leading dot). */
   fileExtensions: string[];
   /**
    * Transform function — takes file source and absolute file path,

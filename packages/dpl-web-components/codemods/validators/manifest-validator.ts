@@ -5,7 +5,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as semver from 'semver';
-import type { CodemodEntry } from '../manifest.types';
 
 export interface ManifestValidationResult {
   valid: boolean;
@@ -83,9 +82,12 @@ export function validateManifest(
     if (!entry.transformPath) {
       errors.push(`${prefix} Missing transformPath.`);
     } else {
-      const absPath = path.resolve(manifestDir, entry.transformPath + '.ts');
-      if (!fs.existsSync(absPath)) {
-        errors.push(`${prefix} Transform file not found: ${absPath}`);
+      const tsPath = path.resolve(manifestDir, entry.transformPath + '.ts');
+      const jsPath = path.resolve(manifestDir, entry.transformPath + '.js');
+      if (!fs.existsSync(tsPath) && !fs.existsSync(jsPath)) {
+        errors.push(
+          `${prefix} Transform file not found: ${tsPath} (or ${jsPath})`,
+        );
       }
     }
   }

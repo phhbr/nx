@@ -19,6 +19,8 @@ interface CliArgs {
   transform?: string;
   dir?: string;
   dryRun: boolean;
+  failOnNoChanges: boolean;
+  failOnWarnings: boolean;
   format: 'human' | 'json';
   verbose: boolean;
   color: boolean;
@@ -28,6 +30,8 @@ interface CliArgs {
 function parseArgs(argv: string[]): CliArgs {
   const result: CliArgs = {
     dryRun: false,
+    failOnNoChanges: false,
+    failOnWarnings: false,
     format: 'human',
     verbose: false,
     color: process.stdout.isTTY ?? true,
@@ -39,6 +43,10 @@ function parseArgs(argv: string[]): CliArgs {
 
     if (arg === '--dry-run' || arg === '--dryRun') {
       result.dryRun = true;
+    } else if (arg === '--fail-on-no-changes') {
+      result.failOnNoChanges = true;
+    } else if (arg === '--fail-on-warnings') {
+      result.failOnWarnings = true;
     } else if (arg === '--verbose' || arg === '-v') {
       result.verbose = true;
     } else if (arg === '--help' || arg === '-h') {
@@ -79,6 +87,10 @@ Options:
   --transform <id>  ID of the codemod to run (see available below).
   --dir <path>      Directory to scan for files to transform (required).
   --dry-run         Print which files would be modified without writing them.
+  --fail-on-no-changes
+                    Exit with code 1 when no files are modified.
+  --fail-on-warnings
+                    Exit with code 1 when warnings are emitted.
   --format=json     Output results as JSON (default: human-readable).
   --verbose, -v     Show detailed logs and progress information.
   --color           Force color output (default: auto-detect TTY).
@@ -111,7 +123,7 @@ function walkDir(dir: string, exts: Set<string>): string[] {
       if (entry.isDirectory()) {
         walk(full);
       } else if (entry.isFile()) {
-        const ext = path.extname(entry.name).slice(1);
+        const ext = normalizeExtension(path.extname(entry.name));
         if (exts.has(ext)) results.push(full);
       }
     }
@@ -119,6 +131,16 @@ function walkDir(dir: string, exts: Set<string>): string[] {
 
   walk(path.resolve(dir));
   return results;
+}
+
+function normalizeExtension(ext: string): string {
+  const trimmed = ext.trim().toLowerCase();
+  if (!trimmed) return '';
+  return trimmed.startsWith('.') ? trimmed.slice(1) : trimmed;
+}
+
+function normalizeExtensions(exts: string[]): string[] {
+  return [...new Set(exts.map(normalizeExtension).filter(Boolean))];
 }
 
 async function main(): Promise<void> {
@@ -160,6 +182,8 @@ async function main(): Promise<void> {
       transform: args.transform,
       dir: args.dir,
       dryRun: args.dryRun,
+      failOnNoChanges: args.failOnNoChanges,
+      failOnWarnings: args.failOnWarnings,
       description: entry.description,
       extensions: entry.fileExtensions,
     });
@@ -173,7 +197,7 @@ async function main(): Promise<void> {
     formatter.info('Scanning files...');
     const startTime = Date.now();
 
-    const extSet = new Set(entry.fileExtensions);
+    const extSet = new Set(normalizeExtensions(entry.fileExtensions));
     const files = walkDir(args.dir, extSet);
 
     formatter.debug(`Found ${files.length} matching files`);
@@ -212,7 +236,11 @@ async function main(): Promise<void> {
       duration,
     );
 
-    process.exit(filesModified > 0 ? 0 : 1);
+    const hasWarnings = formatter.getLogs().some((log) => log.level === 'warn');
+    const shouldFailOnNoChanges = args.failOnNoChanges && filesModified === 0;
+    const shouldFailOnWarnings = args.failOnWarnings && hasWarnings;
+
+    process.exit(shouldFailOnNoChanges || shouldFailOnWarnings ? 1 : 0);
   } catch (err) {
     formatter.error((err as Error).message, {
       stack: (err as Error).stack,
