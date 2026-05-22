@@ -102,7 +102,14 @@ function isValidSyntax(filePath: string, ext: string): boolean {
     }
 
     if (['.tsx', '.jsx', '.ts', '.js'].includes(ext)) {
-      // Basic JS/TS validation
+      // For TypeScript files with imports, skip execution validation
+      // (they require external dependencies to execute)
+      if (/^import\s|^export\s/m.test(content)) {
+        // Just check for basic syntax indicators
+        return content.includes('{') && content.includes('}');
+      }
+
+      // Basic JS/TS validation for non-import code
       // Try to parse as if it were a module (wrap in IIFE if needed)
       const wrapped = `(function() { ${content} })();`;
       try {

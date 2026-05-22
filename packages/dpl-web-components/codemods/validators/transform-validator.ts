@@ -38,10 +38,16 @@ export function validateTransformModule(transformPath: string): TransformValidat
     errors.push(`Syntax error in transform: ${(e as Error).message}`);
   }
 
-  // Check for required exports
-  const hasTransform = /export\s+function\s+transform\s*\(/.test(content);
-  const hasTransformJsx = /export\s+function\s+transformJsx\s*\(/.test(content);
-  const hasTransformHtml = /export\s+function\s+transformHtml\s*\(/.test(content);
+  // Check for required exports (both ES6 and CommonJS)
+  const hasTransform =
+    /export\s+function\s+transform\s*\(/.test(content) ||
+    /exports\.transform\s*=/.test(content);
+  const hasTransformJsx =
+    /export\s+function\s+transformJsx\s*\(/.test(content) ||
+    /exports\.transformJsx\s*=/.test(content);
+  const hasTransformHtml =
+    /export\s+function\s+transformHtml\s*\(/.test(content) ||
+    /exports\.transformHtml\s*=/.test(content);
 
   if (!hasTransform) {
     errors.push('Missing required export: function transform(source, filePath)');
@@ -52,8 +58,12 @@ export function validateTransformModule(transformPath: string): TransformValidat
     warnings.push('No transformJsx or transformHtml functions found. They may be handled in transform().');
   }
 
-  // Check that function signatures are correct
-  if (hasTransform && !/transform\s*\(\s*source\s*:\s*string\s*,\s*filePath\s*:\s*string\s*\)/.test(content)) {
+  // Check that function signatures are correct (both TypeScript and JavaScript)
+  if (
+    hasTransform &&
+    !/transform\s*\(\s*source\s*:\s*string\s*,\s*filePath\s*:\s*string\s*\)/.test(content) &&
+    !/function\s+transform\s*\(\s*\w+\s*,\s*\w+\s*\)/.test(content)
+  ) {
     warnings.push('transform() signature looks non-standard. Expected: (source: string, filePath: string) => string');
   }
 

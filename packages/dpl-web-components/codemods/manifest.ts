@@ -25,8 +25,7 @@ const manifest: CodemodEntry[] = [
     version: '2.0.0',
     id: 'rename-cell-type-icon-to-status',
     description:
-      'Renames CellType "icon" → "status" in Cell object literals. ' +
-      'The "icon" value is deprecated; use "status" for status indicator cells.',
+      'Renames CellType "icon" → "status". Use "status" for status indicator cells.',
     fileExtensions: ['.ts', '.tsx', '.js', '.jsx', '.html', '.vue'],
     transformPath: './transforms/v2.0.0/rename-cell-type-icon-to-status/index',
   },
