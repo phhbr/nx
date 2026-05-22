@@ -10,6 +10,7 @@
   "collection": "dist/collection/collection-manifest.json",
   "collection:main": "dist/collection/index.js",
   "unpkg": "dist/dpl-web-components/dpl-web-components.esm.js",
+  "generators": "./tools/generators",
   "exports": {
     ".": {
         "types": "./dist/types/index.d.ts",

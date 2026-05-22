@@ -1,0 +1,6 @@
+/* TODO: Update this with the expected output after transformation. */
+export function example() {
+  return {
+    newProp: 'new-value',
+  };
+}

@@ -1,0 +1,10 @@
+{
+  "generators": {
+    "transform": {
+      "factory": "./transform/index",
+      "schema": "./transform/schema.json",
+      "description": "Scaffold a new codemod transform with tests and fixtures"
+    }
+  }
+}
+

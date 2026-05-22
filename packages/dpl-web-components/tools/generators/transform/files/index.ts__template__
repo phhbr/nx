@@ -1,0 +1,34 @@
+/**
+ * Migration: <%= name %> (<%= version %>)
+ *
+ * <%= description %>
+ *
+ * Supported file types: <%= extensions.join(', ') %>
+ *
+ * TODO: Add your transform logic here.
+ */
+
+/**
+ * Transforms JSX/TSX files.
+ */
+export function transformJsx(source: string): string {
+  // TODO: Implement JSX transformation
+  return source;
+}
+
+/**
+ * Transforms HTML/Vue templates.
+ */
+export function transformHtml(source: string): string {
+  // TODO: Implement HTML transformation
+  return source;
+}
+
+/**
+ * Unified entry point — routes to the correct transform based on file extension.
+ */
+export function transform(source: string, filePath: string): string {
+  if (/\.[jt]sx?$/.test(filePath)) return transformJsx(source);
+  if (/\.(html|vue)$/.test(filePath)) return transformHtml(source);
+  return source;
+}

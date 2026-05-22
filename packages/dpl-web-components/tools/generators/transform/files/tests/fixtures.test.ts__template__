@@ -1,0 +1,47 @@
+/**
+ * Fixture-based tests for <%= name %>.
+ *
+ * To regenerate golden files after an intentional behaviour change:
+ *
+ *   REGENERATE_FIXTURES=1 pnpm --dir packages/dpl-web-components codemods:test
+ *
+ * Review the diff of the regenerated output files before committing.
+ */
+
+import * as fs from 'fs';
+import * as path from 'path';
+import { describe, expect, it } from '@jest/globals';
+import { transform } from '../index';
+
+const FIXTURES = path.join(__dirname, 'fixtures');
+const REGEN = process.env.REGENERATE_FIXTURES === '1';
+
+function goldenTest(inputFile: string, outputFile: string, filepath: string): void {
+  const inputPath = path.join(FIXTURES, inputFile);
+  const outputPath = path.join(FIXTURES, outputFile);
+  const input = fs.readFileSync(inputPath, 'utf8');
+  const actual = transform(input, filepath);
+
+  if (REGEN) {
+    fs.writeFileSync(outputPath, actual, 'utf8');
+    expect(actual.length).toBeGreaterThan(0);
+  } else {
+    if (!fs.existsSync(outputPath)) {
+      throw new Error(
+        `Golden file not found: ${outputPath}\nRun with REGENERATE_FIXTURES=1 to generate it.`,
+      );
+    }
+    const expected = fs.readFileSync(outputPath, 'utf8');
+    expect(actual).toBe(expected);
+  }
+}
+
+describe('<%= name %>', () => {
+  it('transforms JSX/TSX', () => {
+    goldenTest('component.input.tsx', 'component.output.tsx', 'component.tsx');
+  });
+
+  it('transforms HTML', () => {
+    goldenTest('template.input.html', 'template.output.html', 'template.html');
+  });
+});

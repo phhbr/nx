@@ -156,7 +156,32 @@ This scopes the replacement to opening tags and never touches text content or ot
 
 ## Adding a new migration
 
-### 1. Create the transform
+### 0. Use the generator (recommended)
+
+Use the Nx generator to scaffold a new transform with boilerplate, tests, and fixtures:
+
+```bash
+nx generate @designsystem/dpl-web-components:transform \
+  --name=your-migration-id \
+  --version=X.Y.Z \
+  --description="One-line description of what this transform does" \
+  --extensions=tsx,html,vue
+```
+
+This creates:
+- Transform implementation at `codemods/transforms/vX.Y.Z/your-migration-id/index.ts`
+- Test file and fixture templates
+- Automatic manifest registration
+
+Then skip to step 1 below (Write tests) and customize the generated files.
+
+For more details, see [tools/generators/README.md](../../tools/generators/README.md).
+
+---
+
+### 1. Create the transform (manual)
+
+If you prefer not to use the generator:
 
 ```bash
 mkdir -p codemods/transforms/vX.Y.Z/your-migration-id

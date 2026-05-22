@@ -1,0 +1,6 @@
+{
+  "name": "@designsystem/dpl-web-components-generators",
+  "version": "1.0.0",
+  "description": "Nx generators for DPL Web Components codemods",
+  "private": true
+}

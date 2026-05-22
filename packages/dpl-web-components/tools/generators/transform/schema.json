@@ -1,0 +1,42 @@
+{
+  "$schema": "http://json-schema.org/schema",
+  "type": "object",
+  "title": "Create a new codemod transform",
+  "description": "Scaffold a new codemod transform with tests, fixtures, and manifest integration.",
+  "examples": [
+    {
+      "command": "nx generate @designsystem/dpl-web-components:transform --name=rename-my-prop --version=3.0.0 --extensions=tsx,html"
+    }
+  ],
+  "properties": {
+    "name": {
+      "description": "Kebab-case ID of the transform (e.g. 'rename-dpl-button-variant')",
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9]*(-[a-z0-9]+)*$",
+      "x-prompt": "Transform name (kebab-case)"
+    },
+    "version": {
+      "description": "Semantic version for this transform (e.g. '3.0.0'). The transform applies to upgrades to or past this version.",
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
+      "x-prompt": "Semantic version (e.g. 3.0.0)"
+    },
+    "extensions": {
+      "description": "Comma-separated file extensions to target (e.g. 'tsx,html,vue'). No leading dots.",
+      "type": "string",
+      "default": "ts,tsx,js,jsx,html,vue",
+      "x-prompt": "File extensions (comma-separated, no dots)"
+    },
+    "description": {
+      "description": "Human-readable description of what this transform does",
+      "type": "string",
+      "x-prompt": "Description (what does this transform do?)"
+    },
+    "includeFixtures": {
+      "description": "Create example fixture files for testing (recommended)",
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "required": ["name", "version", "description"]
+}

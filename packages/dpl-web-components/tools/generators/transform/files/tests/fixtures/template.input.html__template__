@@ -1,0 +1,4 @@
+<!-- TODO: Replace with actual example HTML that your transform should change. -->
+<div class="example">
+  <span old-attr="old-value">Example</span>
+</div>

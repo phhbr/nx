@@ -1,0 +1,6 @@
+/* TODO: Replace with actual example code that your transform should change. */
+export function example() {
+  return {
+    oldProp: 'old-value',
+  };
+}
