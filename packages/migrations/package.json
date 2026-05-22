@@ -32,7 +32,7 @@
     "@types/jest": "latest",
     "@types/node": "latest",
     "@types/semver": "^7.0.0",
-    "jest": "latest",
+    "jest": "30.2.0",
     "ts-jest": "latest",
     "typescript": "latest"
   },
