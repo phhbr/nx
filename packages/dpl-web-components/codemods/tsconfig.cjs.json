@@ -18,7 +18,9 @@
   "include": [
     "manifest.ts",
     "cli.ts",
+    "validate.ts",
     "utils/**/*.ts",
+    "validators/**/*.ts",
     "transforms/**/*.ts"
   ],
   "exclude": [

@@ -44,6 +44,8 @@
     "export-interfaces": "node helperScripts/export-interfaces.ts",
     "codemods:build": "tsc -p codemods/tsconfig.cjs.json",
     "codemods:test": "jest --config codemods/jest.config.cjs",
+    "codemods:validate": "node codemods/dist/validate.js",
+    "codemods:validate:strict": "node codemods/dist/validate.js --strict",
     "codemods:run": "node codemods/dist/cli.js"
   },
   "devDependencies": {

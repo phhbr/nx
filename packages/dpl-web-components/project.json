@@ -65,6 +65,24 @@
       "dependsOn": ["codemods:build"],
       "cache": true
     },
+    "codemods:validate": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node codemods/dist/validate.js",
+        "cwd": "packages/dpl-web-components"
+      },
+      "dependsOn": ["codemods:build"],
+      "cache": true
+    },
+    "codemods:validate:strict": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node codemods/dist/validate.js --strict",
+        "cwd": "packages/dpl-web-components"
+      },
+      "dependsOn": ["codemods:build"],
+      "cache": true
+    },
     "codemods:run": {
       "executor": "nx:run-commands",
       "options": {

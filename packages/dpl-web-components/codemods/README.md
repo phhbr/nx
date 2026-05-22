@@ -14,8 +14,33 @@ Automated migration infrastructure for `@designsystem/dpl-web-components`. This 
 
 | Version | ID | File types | Description |
 | --- | --- | --- | --- |
-| v9.0.0 | `rename-dpl-button-variant-outline-to-ghost` | tsx, jsx, ts, js, html, vue | Renames variant outline → ghost on `<dpl-button>` and `<DplButton>`, including supported dynamic binding string-literals |
-| v9.0.0 | `rename-dpl-button-config-test-interface-to-new-property` | tsx, jsx, html, vue | Renames `ITestButtonConfig.testInterface` → `newProperty` in inline JSX object literals and rewritable Angular/Vue dynamic object-literal bindings |
+| v2.0.0 | `rename-cell-type-icon-to-status` | ts, tsx, js, jsx, html, vue | Renames CellType "icon" → "status" in Cell object literals |
+
+---
+
+## Validation & Safety
+
+All transforms are validated before publication to ensure:
+
+- **Correctness** — Transforms export required functions with proper signatures
+- **Safety** — No corruption of code (balanced delimiters, no data loss)
+- **Idempotency** — Running twice produces same result
+- **Completeness** — Test fixtures exist and are valid
+
+Run validation:
+
+```bash
+# Build first
+nx run dpl-web-components:codemods:build
+
+# Standard validation (warnings don't fail)
+nx run dpl-web-components:codemods:validate
+
+# Strict mode (warnings are errors, used in CI/CD)
+nx run dpl-web-components:codemods:validate:strict
+```
+
+For full details, see [VALIDATION.md](./VALIDATION.md).
 
 ---
 
@@ -267,11 +292,40 @@ nx run dpl-web-components:codemods:run -- \
 | --- | --- | --- |
 | Compile codemods to CJS | `nx run dpl-web-components:codemods:build` | `codemods/dist/` |
 | Run codemod tests | `nx run dpl-web-components:codemods:test` | (depends on build) |
+| **Validate transforms** | `nx run dpl-web-components:codemods:validate` | (depends on build) |
+| **Strict validation (CI/CD)** | `nx run dpl-web-components:codemods:validate:strict` | (fails on warnings) |
 | Run a transform directly | `nx run dpl-web-components:codemods:run -- --transform <id> --dir <path>` | Modified files |
 | Build migrations CLI | `nx run migrations:build` | `packages/migrations/dist/` |
 | Run migrations CLI tests | `nx run migrations:test` | — |
 
 The `codemods/dist/` folder is included in the `files` array of `dpl-web-components/package.json` and exposed via the `./codemods/manifest` export condition so the `@designsystem/migrations` CLI can `require()` the compiled manifest and transforms after npm install.
+
+### Validation Step
+
+Before publication, run validation to ensure all transforms are safe and correct:
+
+```bash
+# Build codemods
+nx run dpl-web-components:codemods:build
+
+# Run tests
+nx run dpl-web-components:codemods:test
+
+# Validate (warnings don't fail)
+nx run dpl-web-components:codemods:validate
+
+# Strict validation for CI/CD (warnings fail)
+nx run dpl-web-components:codemods:validate:strict
+```
+
+Validators check:
+- ✅ **Manifest validity** — Version, ID, extensions, paths correct
+- ✅ **Transform exports** — Required functions present with correct signatures
+- ✅ **Fixture completeness** — Test files exist and are syntactically valid
+- ✅ **Idempotency** — Running twice produces same result (via tests)
+- ✅ **Safety** — No code corruption or data loss (via tests)
+
+See [VALIDATION.md](./VALIDATION.md) for full details.
 
 ---
 
