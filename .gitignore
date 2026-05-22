@@ -25,7 +25,7 @@ out-tsc/
 dist-custom-elements/
 **/dist-custom-elements/
 dist/collection/
-**/components/
+packages/dpl-web-components/components/
 .ng_package/
 loader/
 **/loader/
