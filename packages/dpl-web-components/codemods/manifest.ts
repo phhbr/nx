@@ -18,33 +18,8 @@
  *   3. Bump version and publish.
  */
 
-export interface CodemodEntry {
-  version: string;
-  id: string;
-  description: string;
-  fileExtensions: string[];
-  transformPath: string;
-}
+import type { CodemodEntry } from './manifest.types';
 
-const manifest: CodemodEntry[] = [
-  {
-    version: '9.0.0',
-    id: 'rename-dpl-button-variant-outline-to-ghost',
-    description:
-      'Renames variant="outline" to variant="ghost" on <dpl-button> and <DplButton> elements.',
-    fileExtensions: ['tsx', 'jsx', 'ts', 'js', 'html', 'vue'],
-    transformPath:
-      './transforms/v9.0.0/rename-dpl-button-variant-outline-to-ghost/index',
-  },
-  {
-    version: '9.0.0',
-    id: 'rename-dpl-button-config-test-interface-to-new-property',
-    description:
-      'Renames ITestButtonConfig.testInterface to newProperty in inline buttonConfig object literals on <dpl-button> and <DplButton>.',
-    fileExtensions: ['tsx', 'jsx', 'html', 'vue'],
-    transformPath:
-      './transforms/v9.0.0/rename-dpl-button-config-test-interface-to-new-property/index',
-  },
-];
+const manifest: CodemodEntry[] = [];
 
 export default manifest;

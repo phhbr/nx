@@ -12,13 +12,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import manifest from './manifest';
-
-interface CliArgs {
-  transform?: string;
-  dir?: string;
-  dryRun: boolean;
-  help: boolean;
-}
+import type { CliArgs } from './cli.types';
 
 function parseArgs(argv: string[]): CliArgs {
   const result: CliArgs = { dryRun: false, help: false };

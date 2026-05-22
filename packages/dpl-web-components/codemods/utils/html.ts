@@ -1,4 +1,5 @@
 import { escapeRegExp } from './common';
+import type { RewriteOutcome, WarnHandler } from './interfaces';
 
 export function replaceHtmlAttr(
   source: string,
@@ -49,7 +50,7 @@ export function renameHtmlDynamicBindingObjectPropKey(
   fromKey: string,
   toKey: string,
   filePath?: string,
-  warn?: (message: string) => void,
+  warn?: WarnHandler,
 ): string {
   const tagAlternation = tagNames.join('|');
 
@@ -119,7 +120,7 @@ export function scanHtmlDynamicBindings(
   tagNames: string[],
   attrName: string,
   filePath: string,
-  warn: (message: string) => void,
+  warn: WarnHandler,
 ): void {
   const tagAlternation = tagNames.join('|');
 
@@ -166,7 +167,7 @@ function renameObjectLiteralKeysInExpression(
   expression: string,
   fromKey: string,
   toKey: string,
-): { value: string; changed: boolean } {
+): RewriteOutcome {
   let next = expression;
 
   const explicitKeyRe = new RegExp(

@@ -1,7 +1,10 @@
 import * as recast from 'recast';
-
-type JSXAttribute = recast.types.namedTypes.JSXAttribute;
-type JSXOpeningElement = recast.types.namedTypes.JSXOpeningElement;
+import type { WarnHandler } from './interfaces';
+import type {
+  JSXAttributeNode,
+  JSXOpeningElementNode,
+  JSXExpressionContainerNode,
+} from './jsx.types';
 
 /**
  * Replaces a JSX string literal attribute value on specific element tags.
@@ -29,7 +32,7 @@ export function replaceJsxStringAttr(
 
   recast.visit(ast, {
     visitJSXOpeningElement(path) {
-      const node = path.node as JSXOpeningElement;
+      const node = path.node as JSXOpeningElementNode;
       const name = node.name;
 
       let localName: string | null = null;
@@ -43,7 +46,7 @@ export function replaceJsxStringAttr(
 
       for (const attr of (node.attributes ?? [])) {
         if (attr.type !== 'JSXAttribute') continue;
-        const jsxAttr = attr as JSXAttribute;
+        const jsxAttr = attr as JSXAttributeNode;
         if (
           jsxAttr.name.type !== 'JSXIdentifier' ||
           jsxAttr.name.name !== attrName
@@ -61,7 +64,7 @@ export function replaceJsxStringAttr(
         }
 
         if (jsxAttr.value?.type === 'JSXExpressionContainer') {
-          const container = jsxAttr.value as recast.types.namedTypes.JSXExpressionContainer;
+          const container = jsxAttr.value as JSXExpressionContainerNode;
           if (replaceStringLiteralsInNode(container.expression, fromValue, toValue)) {
             changed = true;
           }
@@ -87,7 +90,7 @@ export function renameJsxObjectPropKey(
   fromKey: string,
   toKey: string,
   filePath?: string,
-  warn?: (message: string) => void,
+  warn?: WarnHandler,
 ): string {
   const ast = recast.parse(source, {
     parser: require('recast/parsers/babel-ts'),
@@ -97,7 +100,7 @@ export function renameJsxObjectPropKey(
 
   recast.visit(ast, {
     visitJSXOpeningElement(path) {
-      const node = path.node as JSXOpeningElement;
+      const node = path.node as JSXOpeningElementNode;
       const name = node.name;
 
       let localName: string | null = null;
@@ -106,7 +109,7 @@ export function renameJsxObjectPropKey(
 
       for (const attr of node.attributes ?? []) {
         if (attr.type !== 'JSXAttribute') continue;
-        const jsxAttr = attr as JSXAttribute;
+        const jsxAttr = attr as JSXAttributeNode;
         if (
           jsxAttr.name.type !== 'JSXIdentifier' ||
           jsxAttr.name.name !== attrName
@@ -114,7 +117,7 @@ export function renameJsxObjectPropKey(
 
         if (!jsxAttr.value || jsxAttr.value.type !== 'JSXExpressionContainer') continue;
 
-        const container = jsxAttr.value as recast.types.namedTypes.JSXExpressionContainer;
+        const container = jsxAttr.value as JSXExpressionContainerNode;
 
         if (!container.expression || container.expression.type !== 'ObjectExpression') {
           if (warn) {
