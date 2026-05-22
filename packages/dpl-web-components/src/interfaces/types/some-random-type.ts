@@ -1,1 +1,0 @@
-export type SomeRandomType = 'some' | 'random' | 'type';

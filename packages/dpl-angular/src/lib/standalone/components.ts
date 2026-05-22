@@ -9,19 +9,19 @@ import type { Components } from '@designsystem/dpl-web-components/components';
 import { defineCustomElement as defineDplButton } from '@designsystem/dpl-web-components/components/dpl-button.js';
 @ProxyCmp({
   defineCustomElementFn: defineDplButton,
-  inputs: ['buttonConfig', 'complexProp', 'disabled']
+  inputs: ['disabled', 'name']
 })
 @Component({
   selector: 'dpl-button',
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: '<ng-content></ng-content>',
   // eslint-disable-next-line @angular-eslint/no-inputs-metadata-property
-  inputs: [{ name: 'buttonConfig', required: true }, { name: 'complexProp', required: true }, 'disabled'],
-  outputs: ['buttonAction'],
+  inputs: [{ name: 'disabled', required: true }, 'name'],
+  outputs: ['dplClick'],
 })
 export class DplButton {
   protected el: HTMLDplButtonElement;
-  @Output() buttonAction = new EventEmitter<CustomEvent<IDplButtonSomeEventInterface>>();
+  @Output() dplClick = new EventEmitter<CustomEvent<void>>();
   constructor(c: ChangeDetectorRef, r: ElementRef, protected z: NgZone) {
     c.detach();
     this.el = r.nativeElement;
@@ -29,11 +29,9 @@ export class DplButton {
 }
 
 
-import type { SomeEventInterface as IDplButtonSomeEventInterface } from '@designsystem/dpl-web-components/components';
-
 export declare interface DplButton extends Components.DplButton {
 
-  buttonAction: EventEmitter<CustomEvent<IDplButtonSomeEventInterface>>;
+  dplClick: EventEmitter<CustomEvent<void>>;
 }
 
 

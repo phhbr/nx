@@ -5,16 +5,10 @@
  * It contains typing information for all components that exist in this project.
  */
 import { HTMLStencilElement, JSXBase } from "@stencil/core/internal";
-import { ITestButtonConfig, SomeEventInterface, SomeInterface } from "./interfaces";
-export { ITestButtonConfig, SomeEventInterface, SomeInterface } from "./interfaces";
 export namespace Components {
     interface DplButton {
-        "buttonConfig": ITestButtonConfig;
-        "complexProp": SomeInterface;
-        /**
-          * @default false
-         */
         "disabled": boolean;
+        "name"?: string;
     }
 }
 export interface DplButtonCustomEvent<T> extends CustomEvent<T> {
@@ -23,7 +17,7 @@ export interface DplButtonCustomEvent<T> extends CustomEvent<T> {
 }
 declare global {
     interface HTMLDplButtonElementEventMap {
-        "buttonAction": SomeEventInterface;
+        "dplClick": void;
     }
     interface HTMLDplButtonElement extends Components.DplButton, HTMLStencilElement {
         addEventListener<K extends keyof HTMLDplButtonElementEventMap>(type: K, listener: (this: HTMLDplButtonElement, ev: DplButtonCustomEvent<HTMLDplButtonElementEventMap[K]>) => any, options?: boolean | AddEventListenerOptions): void;
@@ -45,13 +39,9 @@ declare global {
 }
 declare namespace LocalJSX {
     interface DplButton {
-        "buttonConfig": ITestButtonConfig;
-        "complexProp": SomeInterface;
-        /**
-          * @default false
-         */
-        "disabled"?: boolean;
-        "onButtonAction"?: (event: DplButtonCustomEvent<SomeEventInterface>) => void;
+        "disabled": boolean;
+        "name"?: string;
+        "onDplClick"?: (event: DplButtonCustomEvent<void>) => void;
     }
     interface IntrinsicElements {
         "dpl-button": DplButton;
