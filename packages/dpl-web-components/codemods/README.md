@@ -1,52 +1,55 @@
-# Codemods — Internal Developer Guide
+# Codemods - Interner Leitfaden fuer Entwickler
 
-Automated migration infrastructure for `@designsystem/dpl-web-components`. This document is for contributors adding or maintaining codemods. For consumer usage, see the [`@designsystem/migrations` README](../../migrations/README.md).
+Automatisierte Migrations-Infrastruktur fuer `@designsystem/dpl-web-components`.
+Dieses Dokument ist fuer Entwickler, die Codemods erstellen oder pflegen.
+Wenn du die Migration nur ausfuehren willst, lies die README von `@designsystem/migrations`:
+[`../../migrations/README.md`](../../migrations/README.md).
 
-## What lives where
+## Was liegt wo
 
-- `packages/dpl-web-components/codemods/` contains the migration payload: the manifest, individual transform implementations, shared utilities, and tests.
-- `packages/migrations/` contains the CLI/runtime that discovers those transforms and applies them to a consumer project.
-- The codemods are published from the web-components package so each breaking change ships alongside the component version that introduced it.
+- `packages/dpl-web-components/codemods/`: Manifest, einzelne Transforms, gemeinsame Utilities und Tests.
+- `packages/migrations/`: CLI/Runtime, die Transforms findet und in einem Zielprojekt ausfuehrt.
+- Die Codemods werden aus dem Web-Components-Paket veroeffentlicht. So kommt jede Migration mit der passenden Komponenten-Version.
 
 ---
 
-## Registered migrations
+## Registrierte Migrationen
 
-| Version | ID | File types | Description |
+| Version | ID | Dateitypen | Beschreibung |
 | --- | --- | --- | --- |
-| v2.0.0 | `rename-cell-type-icon-to-status` | ts, tsx, js, jsx, html, vue | Renames CellType "icon" → "status" in Cell object literals |
+| v2.0.0 | `rename-cell-type-icon-to-status` | ts, tsx, js, jsx, html, vue | Benennt `CellType`-Wert `icon` in `status` um |
 
 ---
 
-## Validation & Safety
+## Validierung und Sicherheit
 
-All transforms are validated before publication to ensure:
+Alle Transforms werden vor der Veroeffentlichung geprueft. Ziele:
 
-- **Correctness** — Transforms export required functions with proper signatures
-- **Safety** — No corruption of code (balanced delimiters, no data loss)
-- **Idempotency** — Running twice produces same result
-- **Completeness** — Test fixtures exist and are valid
+- **Korrektheit**: Noetige Funktionen werden korrekt exportiert
+- **Sicherheit**: Kein kaputter Code und kein Datenverlust
+- **Idempotenz**: Zwei Durchlaeufe liefern dasselbe Ergebnis
+- **Vollstaendigkeit**: Test-Fixtures sind vorhanden und gueltig
 
-Run validation:
+Validierung ausfuehren:
 
 ```bash
-# Build first
+# Zuerst bauen
 nx run dpl-web-components:codemods:build
 
-# Standard validation (warnings don't fail)
+# Standard-Validierung (Warnungen sind erlaubt)
 nx run dpl-web-components:codemods:validate
 
-# Strict mode (warnings are errors, used in CI/CD)
+# Strikter Modus (Warnungen sind Fehler, fuer CI/CD)
 nx run dpl-web-components:codemods:validate:strict
 ```
 
-For full details, see [VALIDATION.md](./VALIDATION.md).
+Mehr Details findest du in [VALIDATION.md](./VALIDATION.md).
 
 ---
 
-## Architecture
+## Architektur
 
-Two packages work together to deliver codemods to consumers:
+Zwei Pakete arbeiten zusammen, damit Nutzer Codemods ausfuehren koennen:
 
 ```mermaid
 flowchart TD
@@ -77,7 +80,7 @@ flowchart TD
     CM_DIST -- "exports: './codemods/manifest'" --> RUNNER_DIST
 
     subgraph consumer["Consumer project (at upgrade time)"]
-        CLI["npx @designsystem/migrations\n--from=8.0.0 --to=9.0.0 --dir=./src"]
+        CLI["npx @designsystem/migrations\n--from=1.0.0 --to=2.0.0 --dir=./src"]
         FILES["Source files\n.tsx / .ts / .html / .vue"]
         PATCHED["Patched files"]
 
@@ -91,7 +94,7 @@ flowchart TD
     style consumer fill:#fff8f0,stroke:#c97c2e
 ```
 
-### How transforms are discovered at runtime
+### Wie Transforms zur Laufzeit gefunden werden
 
 ```mermaid
 sequenceDiagram
@@ -105,9 +108,9 @@ sequenceDiagram
     Runner->>Runner: parse --from, --to, --dir, --dry-run
     Runner->>Manifest: require.resolve('@designsystem/dpl-web-components/codemods/manifest')
     Manifest-->>Runner: CodemodEntry[] (version, id, transformPath, fileExtensions)
-    Runner->>Runner: selectMigrations(all, from, to) — semver filter + sort
+    Runner->>Runner: selectMigrations(all, from, to) - semver filter + sort
     Runner->>FS: glob **/*.{tsx,html,...} excluding node_modules, dist
-    loop each selected migration × each matching file
+    loop each selected migration x each matching file
         Runner->>Transform: require(absTransformPath)
         Transform-->>Runner: { transform(source, filePath) }
         Runner->>FS: readFileSync(filePath)
@@ -123,67 +126,70 @@ sequenceDiagram
 
 ---
 
-## Folder structure
+## Ordnerstruktur
 
-```
+```text
 codemods/
-├── README.md               ← you are here
-├── manifest.ts             ← version registry: each entry maps a semver to a transform module
-├── jest.config.cjs         ← standalone Jest config (separate from Stencil's test runner)
-├── tsconfig.cjs.json       ← compiles codemods/ → codemods/dist/ (CommonJS, no __tests__)
-├── cli.ts                  ← direct per-transform runner (--transform <id> --dir <path>)
+├── README.md               <- du bist hier
+├── manifest.ts             <- Versions-Registry: mappt semver auf Transform-Modul
+├── jest.config.cjs         <- eigene Jest-Konfiguration (getrennt von Stencil-Tests)
+├── tsconfig.cjs.json       <- kompiliert codemods/ -> codemods/dist/ (CommonJS, ohne __tests__)
+├── cli.ts                  <- direkter Runner pro Transform (--transform <id> --dir <path>)
 ├── utils/
-│   ├── common.ts           ← shared helpers like escapeRegExp()
-│   ├── html.ts             ← HTML/Vue template helpers
-│   └── jsx.ts              ← JSX/TSX AST helpers
+│   ├── common.ts           <- gemeinsame Helfer wie escapeRegExp()
+│   ├── html.ts             <- Helfer fuer HTML/Vue-Templates
+│   └── jsx.ts              <- AST-Helfer fuer JSX/TSX
 └── transforms/
-    └── v9.0.0/
-        └── rename-dpl-button-variant-outline-to-ghost/
-            ├── index.ts            ← transform(), transformJsx(), transformHtml()
+  └── v2.0.0/
+    └── rename-cell-type-icon-to-status/
+            ├── index.ts            <- transform(), transformJsx(), transformHtml()
             └── __tests__/
-                └── index.test.ts   ← unit tests (inline string fixtures)
+                └── index.test.ts   <- Unit-Tests (inline String-Fixtures)
 ```
 
-**Naming convention:** `transforms/<vX.Y.Z>/<kebab-description>/`  
-The version folder is the `dpl-web-components` semver at which consumers must run this migration.
+**Namensregel:** `transforms/<vX.Y.Z>/<kebab-description>/`
+Der Versionsordner ist die `dpl-web-components`-Version, ab der Nutzer diese Migration brauchen.
 
 ---
 
-## How a transform works
+## Wie ein Transform funktioniert
 
-Each transform exports three functions:
+Jeder Transform exportiert drei Funktionen:
 
 ```typescript
-// Route by file extension
+// Routing nach Dateiendung
 export function transform(source: string, filePath: string): string
 
-// AST-based via recast (for .ts, .tsx, .js, .jsx)
+// AST-basiert via recast (fuer .ts, .tsx, .js, .jsx)
 export function transformJsx(source: string): string
 
-// Regex-based (for .html, .vue templates)
+// Regex-basiert (fuer .html, .vue templates)
 export function transformHtml(source: string): string
 ```
 
-### JSX/TSX path — `replaceJsxStringAttr`
+### JSX/TSX-Pfad - `replaceJsxStringAttr`
 
-Uses `recast` with the `babel-ts` parser to walk the AST. Static `StringLiteral` attribute values are rewritten, and matching string literals inside `JSXExpressionContainer` values are also rewritten (for example `variant={"outline"}`). Modified nodes are reprinted using `recast.types.builders.stringLiteral()`, which creates a fresh node without source-location metadata, forcing recast to reprint only changed nodes while preserving surrounding formatting.
+Nutzt `recast` mit `babel-ts` Parser. Der AST wird durchlaufen und statische `StringLiteral`-Werte werden ersetzt.
+Auch passende String-Literale in `JSXExpressionContainer` werden ersetzt (z. B. `variant={"outline"}`).
+Geaenderte Knoten werden mit `recast.types.builders.stringLiteral()` neu gebaut. Dadurch druckt recast nur geaenderte Teile neu und behaelt das restliche Formatting.
 
-### HTML/Vue path — `replaceHtmlAttr`
+### HTML/Vue-Pfad - `replaceHtmlAttr`
 
-Uses a two-pass regex strategy:
+Nutzt eine Regex-Strategie mit zwei Schritten:
 
-1. **Outer regex** matches the complete opening tag for target elements (e.g. `<dpl-button ...>` or `<dpl-button .../>`), handling multi-line attributes and quoted `>` characters inside attribute values.
-2. **Inner regex** replaces the target attribute value within each matched tag only.
+1. **Aeussere Regex** findet das komplette oeffnende Tag der Ziel-Elemente (z. B. `<dpl-button ...>` oder `<dpl-button .../>`).
+2. **Innere Regex** ersetzt den Ziel-Attributwert nur innerhalb dieses gefundenen Tags.
 
-This scopes the replacement to opening tags and never touches text content or other elements. Dynamic Angular/Vue bindings are also supported for safe string-literal rewrites inside `[attr]="..."` and `:attr="..."`.
+So bleibt die Ersetzung auf oeffnende Tags begrenzt. Textinhalt und andere Elemente werden nicht veraendert.
+Dynamische Angular/Vue-Bindings werden auch unterstuetzt, aber nur fuer sichere String-Literal-Ersetzungen in `[attr]="..."` und `:attr="..."`.
 
 ---
 
-## Adding a new migration
+## Neue Migration hinzufuegen
 
-### 0. Use the generator (recommended)
+### 0. Generator nutzen (empfohlen)
 
-Use the Nx generator to scaffold a new transform with boilerplate, tests, and fixtures:
+Nutze den Nx-Generator, um Transform, Tests und Fixtures automatisch anzulegen:
 
 ```bash
 nx generate @designsystem/dpl-web-components:transform \
@@ -193,20 +199,19 @@ nx generate @designsystem/dpl-web-components:transform \
   --extensions=tsx,html,vue
 ```
 
-This creates:
-- Transform implementation at `codemods/transforms/vX.Y.Z/your-migration-id/index.ts`
-- Test file and fixture templates
-- Automatic manifest registration
+Das erzeugt:
+- Transform unter `codemods/transforms/vX.Y.Z/your-migration-id/index.ts`
+- Testdatei und Fixture-Vorlagen
+- Automatische Registrierung im Manifest
 
-Then skip to step 1 below (Write tests) and customize the generated files.
-
-For more details, see [tools/generators/README.md](../../tools/generators/README.md).
+Danach kannst du direkt mit Schritt 1 weitermachen (Tests schreiben).
+Mehr Details: [tools/generators/README.md](../../tools/generators/README.md).
 
 ---
 
-### 1. Create the transform (manual)
+### 1. Transform erstellen (manuell)
 
-If you prefer not to use the generator:
+Wenn du den Generator nicht nutzen willst:
 
 ```bash
 mkdir -p codemods/transforms/vX.Y.Z/your-migration-id
@@ -215,7 +220,7 @@ mkdir -p codemods/transforms/vX.Y.Z/your-migration-id/__tests__
 touch codemods/transforms/vX.Y.Z/your-migration-id/__tests__/index.test.ts
 ```
 
-**`index.ts` skeleton:**
+**`index.ts`-Grundgeruest:**
 
 ```typescript
 import { replaceJsxStringAttr } from '../../../utils/jsx';
@@ -241,20 +246,20 @@ export function transform(source: string, filePath: string): string {
 }
 ```
 
-### 2. Write tests
+### 2. Tests schreiben
 
-Required test cases before a migration is considered production-ready:
+Noetige Testfaelle, bevor ein Transform produktionsreif ist:
 
-| Case | Why |
+| Fall | Warum |
 | --- | --- |
-| Primary transformation | Proves the codemod does what it says |
-| Already-migrated input (idempotency) | Running twice must not corrupt output |
-| Dynamic binding (JSX / Angular / Vue) | Verify only safe literal/key rewrites happen; runtime references remain untouched |
-| Unrelated component with same attribute | Must be scoped to target elements only |
-| Multiple occurrences in one file | All instances must be updated |
-| HTML/template variant | If applicable — covers Angular and Vue consumers |
+| Haupt-Transformation | Zeigt, dass der Codemod das Ziel erreicht |
+| Bereits migrierte Eingabe (Idempotenz) | Zweiter Lauf darf nichts kaputt machen |
+| Dynamische Bindings (JSX / Angular / Vue) | Nur sichere Literal-/Key-Ersetzungen, keine Laufzeit-Referenzen |
+| Anderes Component mit gleichem Attribut | Muss auf Ziel-Elemente begrenzt sein |
+| Mehrere Treffer in einer Datei | Alle Stellen muessen angepasst werden |
+| HTML/Template-Variante | Falls relevant, fuer Angular/Vue |
 
-### 3. Register in `manifest.ts`
+### 3. In `manifest.ts` registrieren
 
 ```typescript
 {
@@ -266,18 +271,19 @@ Required test cases before a migration is considered production-ready:
 }
 ```
 
-`transformPath` is relative to the manifest file. After `tsc`, both the manifest and transforms are in `codemods/dist/`, so the relative path is unchanged.
+`transformPath` ist relativ zur Manifest-Datei.
+Nach `tsc` liegen Manifest und Transforms beide in `codemods/dist/`, deshalb bleibt der relative Pfad gleich.
 
-### 4. Build and test
+### 4. Bauen und testen
 
 ```bash
-# Type-check and compile
+# Type-check und kompilieren
 nx run dpl-web-components:codemods:build
 
-# Run tests
+# Tests ausfuehren
 nx run dpl-web-components:codemods:test
 
-# Smoke-test against a real directory (dry run)
+# Smoke-Test auf echtem Ordner (dry-run)
 nx run dpl-web-components:codemods:run -- \
   --transform your-migration-id \
   --dir ../../apps/angular-demo/src \
@@ -286,55 +292,55 @@ nx run dpl-web-components:codemods:run -- \
 
 ---
 
-## Build pipeline
+## Build-Pipeline
 
-| Step | Command | Output |
+| Schritt | Befehl | Ergebnis |
 | --- | --- | --- |
-| Compile codemods to CJS | `nx run dpl-web-components:codemods:build` | `codemods/dist/` |
-| Run codemod tests | `nx run dpl-web-components:codemods:test` | (depends on build) |
-| **Validate transforms** | `nx run dpl-web-components:codemods:validate` | (depends on build) |
-| **Strict validation (CI/CD)** | `nx run dpl-web-components:codemods:validate:strict` | (fails on warnings) |
-| Run a transform directly | `nx run dpl-web-components:codemods:run -- --transform <id> --dir <path>` | Modified files |
-| Build migrations CLI | `nx run migrations:build` | `packages/migrations/dist/` |
-| Run migrations CLI tests | `nx run migrations:test` | — |
+| Codemods nach CJS kompilieren | `nx run dpl-web-components:codemods:build` | `codemods/dist/` |
+| Codemod-Tests ausfuehren | `nx run dpl-web-components:codemods:test` | (haengt von Build ab) |
+| **Transforms validieren** | `nx run dpl-web-components:codemods:validate` | (haengt von Build ab) |
+| **Strikte Validierung (CI/CD)** | `nx run dpl-web-components:codemods:validate:strict` | (schlaegt bei Warnungen fehl) |
+| Transform direkt ausfuehren | `nx run dpl-web-components:codemods:run -- --transform <id> --dir <path>` | Geaenderte Dateien |
+| Migrations-CLI bauen | `nx run migrations:build` | `packages/migrations/dist/` |
+| Migrations-CLI-Tests ausfuehren | `nx run migrations:test` | - |
 
-The `codemods/dist/` folder is included in the `files` array of `dpl-web-components/package.json` and exposed via the `./codemods/manifest` export condition so the `@designsystem/migrations` CLI can `require()` the compiled manifest and transforms after npm install.
+Der Ordner `codemods/dist/` ist in `dpl-web-components/package.json` unter `files` enthalten und wird ueber `./codemods/manifest` exportiert. So kann die `@designsystem/migrations` CLI das kompilierte Manifest und die Transforms nach `npm install` laden.
 
-### Validation Step
+### Validierungsschritt
 
-Before publication, run validation to ensure all transforms are safe and correct:
+Vor der Veroeffentlichung ausfuehren:
 
 ```bash
-# Build codemods
+# Codemods bauen
 nx run dpl-web-components:codemods:build
 
-# Run tests
+# Tests ausfuehren
 nx run dpl-web-components:codemods:test
 
-# Validate (warnings don't fail)
+# Validieren (Warnungen erlaubt)
 nx run dpl-web-components:codemods:validate
 
-# Strict validation for CI/CD (warnings fail)
+# Strikt fuer CI/CD (Warnungen sind Fehler)
 nx run dpl-web-components:codemods:validate:strict
 ```
 
-Validators check:
-- ✅ **Manifest validity** — Version, ID, extensions, paths correct
-- ✅ **Transform exports** — Required functions present with correct signatures
-- ✅ **Fixture completeness** — Test files exist and are syntactically valid
-- ✅ **Idempotency** — Running twice produces same result (via tests)
-- ✅ **Safety** — No code corruption or data loss (via tests)
+Validatoren pruefen:
+- Manifest-Gueltigkeit
+- Transform-Exports und Signaturen
+- Vollstaendige Fixtures
+- Idempotenz
+- Sicherheit (kein kaputter Code / Datenverlust)
 
-See [VALIDATION.md](./VALIDATION.md) for full details.
+Siehe [VALIDATION.md](./VALIDATION.md) fuer alle Details.
 
 ---
 
-## Safety guardrails
+## Sicherheitsleitlinien
 
-- **Be conservative.** Only transform what you can statically verify as a literal. If a value could be dynamic, do nothing.
-- **Idempotency.** `transform(transform(source)) === transform(source)` must always hold.
-- **Dynamic bindings are opt-in and conservative.** Rewrite only safe literal/key patterns. Leave uncertain expressions unchanged and warn.
-- **Scoped matching.** Regex transforms must operate inside opening tags only — never on text content, comments, or closing tags.
-- **Test no-ops first.** If your no-op tests fail, the transform is too broad. Fix that before the positive cases.
-- **Preserve formatting.** Use `recast` for JS/TS/JSX — it reprints only changed nodes. Avoid string-replacing the entire file.
-- **One concern per transform.** Each transform file handles one logical migration. Don't batch unrelated changes.
+- **Konservativ bleiben.** Nur aendern, was statisch als Literal sicher erkannt wird.
+- **Idempotenz einhalten.** `transform(transform(source)) === transform(source)` muss gelten.
+- **Dynamische Bindings nur vorsichtig.** Nur sichere Literal-/Key-Muster umschreiben, unsichere Ausdruecke unberuehrt lassen.
+- **Scoped Matching.** Regex-Transforms nur in oeffnenden Tags anwenden, nicht in Text, Kommentaren oder schliessenden Tags.
+- **No-op zuerst testen.** Wenn No-op-Tests fehlschlagen, ist das Matching zu breit.
+- **Formatting bewahren.** Fuer JS/TS/JSX `recast` nutzen, keine Komplett-Ersetzung der Datei.
+- **Eine Aufgabe pro Transform.** Nicht mehrere unzusammenhaengende Migrationen in einer Datei mischen.
