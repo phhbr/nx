@@ -1,0 +1,17 @@
+<!-- Table with rows defined in the component class — [rows] binding untouched -->
+<dpl-table [columns]="columns" [rows]="rows"></dpl-table>
+
+<!-- Inline rows binding — icon cells inside the template expression should migrate -->
+<dpl-table
+  [columns]="['state', 'label']"
+  [rows]="[
+    { cells: [{ type: 'icon', value: 'ok', displayValue: 'OK', columnId: 'state' }, { type: 'text', value: 'Active', displayValue: 'Active', columnId: 'label' }] },
+    { cells: [{ type: 'icon', value: 'warn', displayValue: 'Warning', columnId: 'state' }, { type: 'text', value: 'Pending', displayValue: 'Pending', columnId: 'label' }] }
+  ]"
+></dpl-table>
+
+<!-- ngFor over items — inline cell construction -->
+<dpl-table
+  *ngIf="showTable"
+  [rows]="[{ cells: [{ type: 'icon', value: item.state, displayValue: item.label, columnId: 'state' }] }]"
+></dpl-table>

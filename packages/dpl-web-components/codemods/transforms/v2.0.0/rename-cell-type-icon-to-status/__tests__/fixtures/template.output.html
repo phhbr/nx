@@ -1,0 +1,14 @@
+<!-- Angular template: inline rows binding with icon cells -->
+<dpl-table
+  [rows]="[{ cells: [{ type: 'status', value: { icon: 'check', text: 'check', color: 'gray' }, displayValue: 'OK', columnId: 'status' }] }]"
+></dpl-table>
+
+<!-- Vue template: inline rows binding with icon cells -->
+<dpl-table
+  :rows="[{ cells: [{ type: 'status', value: { icon: 'warning', text: 'warning', color: 'gray' }, displayValue: 'Warning', columnId: 'state' }] }]"
+></dpl-table>
+
+<!-- Mixed cell types: only icon should change -->
+<dpl-table
+  [rows]="[{ cells: [{ type: 'status', value: { icon: 'ok', text: 'ok', color: 'gray' } }, { type: 'text', value: 'Hello' }] }]"
+></dpl-table>
