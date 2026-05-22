@@ -29,10 +29,8 @@
     "semver": "^7.7.2"
   },
   "devDependencies": {
-    "@types/jest": "latest",
     "@types/node": "latest",
     "@types/semver": "^7.0.0",
-    "ts-jest": "latest",
     "typescript": "latest"
   },
   "engines": {
