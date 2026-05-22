@@ -1,0 +1,17 @@
+<!-- Identifier key — should be renamed -->
+<dpl-button [buttonConfig]="{ testInterface: myData, title: 'T' }"></dpl-button>
+
+<!-- Already migrated — no-op -->
+<dpl-button [buttonConfig]="{ newProperty: myData }"></dpl-button>
+
+<!-- Vue-style colon binding -->
+<dpl-button :buttonConfig="{ testInterface: val, label: 'X' }"></dpl-button>
+
+<!-- Multiple properties, testInterface among them -->
+<dpl-button [buttonConfig]="{ id: 1, testInterface: payload, active: true }"></dpl-button>
+
+<!-- Shorthand property -->
+<dpl-button [buttonConfig]="{ testInterface, label: 'Y' }"></dpl-button>
+
+<!-- Non-target tag — must NOT change -->
+<other-button [buttonConfig]="{ testInterface: data }"></other-button>

@@ -169,8 +169,11 @@ function replaceStringLiteralsInNode(
   node: unknown,
   fromValue: string,
   toValue: string,
+  visited = new WeakSet<object>(),
 ): boolean {
   if (!node || typeof node !== 'object') return false;
+  if (visited.has(node as object)) return false;
+  visited.add(node as object);
 
   const n = node as Record<string, unknown>;
   let changed = false;
@@ -182,13 +185,13 @@ function replaceStringLiteralsInNode(
 
   if (Array.isArray(node)) {
     for (const item of node) {
-      if (replaceStringLiteralsInNode(item, fromValue, toValue)) changed = true;
+      if (replaceStringLiteralsInNode(item, fromValue, toValue, visited)) changed = true;
     }
     return changed;
   }
 
   for (const value of Object.values(n)) {
-    if (replaceStringLiteralsInNode(value, fromValue, toValue)) changed = true;
+    if (replaceStringLiteralsInNode(value, fromValue, toValue, visited)) changed = true;
   }
 
   return changed;

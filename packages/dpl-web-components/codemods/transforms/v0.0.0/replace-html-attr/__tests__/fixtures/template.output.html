@@ -1,0 +1,30 @@
+<!-- Paired tag -->
+<dpl-button variant="ghost">Click me</dpl-button>
+
+<!-- Self-closing -->
+<dpl-button variant="ghost" />
+
+<!-- Attribute among others -->
+<dpl-button class="btn" variant="ghost" disabled>Submit</dpl-button>
+
+<!-- Multi-line tag -->
+<dpl-button
+  class="action"
+  variant="ghost"
+></dpl-button>
+
+<!-- Angular dynamic binding — string literal -->
+<dpl-button [variant]="'ghost'"></dpl-button>
+
+<!-- Angular dynamic binding — ternary -->
+<dpl-button [variant]="isPrimary ? 'ghost' : 'solid'"></dpl-button>
+
+<!-- Vue dynamic binding — string literal -->
+<dpl-button :variant="'ghost'"></dpl-button>
+
+<!-- Vue dynamic binding — ternary -->
+<dpl-button :variant="active ? 'ghost' : 'filled'"></dpl-button>
+
+<!-- Non-target elements — must NOT change -->
+<other-button variant="outline"></other-button>
+<dpl-chip variant="outline" />
