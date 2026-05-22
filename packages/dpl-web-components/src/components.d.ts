@@ -5,10 +5,22 @@
  * It contains typing information for all components that exist in this project.
  */
 import { HTMLStencilElement, JSXBase } from "@stencil/core/internal";
+import { Row } from "./interfaces/components/table";
+export { Row } from "./interfaces/components/table";
 export namespace Components {
     interface DplButton {
         "disabled": boolean;
         "name"?: string;
+    }
+    interface DplTable {
+        /**
+          * @default []
+         */
+        "columns": string[];
+        /**
+          * @default []
+         */
+        "rows": Row[];
     }
 }
 export interface DplButtonCustomEvent<T> extends CustomEvent<T> {
@@ -33,8 +45,15 @@ declare global {
         prototype: HTMLDplButtonElement;
         new (): HTMLDplButtonElement;
     };
+    interface HTMLDplTableElement extends Components.DplTable, HTMLStencilElement {
+    }
+    var HTMLDplTableElement: {
+        prototype: HTMLDplTableElement;
+        new (): HTMLDplTableElement;
+    };
     interface HTMLElementTagNameMap {
         "dpl-button": HTMLDplButtonElement;
+        "dpl-table": HTMLDplTableElement;
     }
 }
 declare namespace LocalJSX {
@@ -43,8 +62,19 @@ declare namespace LocalJSX {
         "name"?: string;
         "onDplClick"?: (event: DplButtonCustomEvent<void>) => void;
     }
+    interface DplTable {
+        /**
+          * @default []
+         */
+        "columns"?: string[];
+        /**
+          * @default []
+         */
+        "rows"?: Row[];
+    }
     interface IntrinsicElements {
         "dpl-button": DplButton;
+        "dpl-table": DplTable;
     }
 }
 export { LocalJSX as JSX };
@@ -52,6 +82,7 @@ declare module "@stencil/core" {
     export namespace JSX {
         interface IntrinsicElements {
             "dpl-button": LocalJSX.DplButton & JSXBase.HTMLAttributes<HTMLDplButtonElement>;
+            "dpl-table": LocalJSX.DplTable & JSXBase.HTMLAttributes<HTMLDplTableElement>;
         }
     }
 }

@@ -7,6 +7,7 @@ import { ProxyCmp } from './angular-component-lib/utils';
 import type { Components } from '@designsystem/dpl-web-components/components';
 
 import { defineCustomElement as defineDplButton } from '@designsystem/dpl-web-components/components/dpl-button.js';
+import { defineCustomElement as defineDplTable } from '@designsystem/dpl-web-components/components/dpl-table.js';
 @ProxyCmp({
   defineCustomElementFn: defineDplButton,
   inputs: ['disabled', 'name']
@@ -33,5 +34,28 @@ export declare interface DplButton extends Components.DplButton {
 
   dplClick: EventEmitter<CustomEvent<void>>;
 }
+
+
+@ProxyCmp({
+  defineCustomElementFn: defineDplTable,
+  inputs: ['columns', 'rows']
+})
+@Component({
+  selector: 'dpl-table',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  template: '<ng-content></ng-content>',
+  // eslint-disable-next-line @angular-eslint/no-inputs-metadata-property
+  inputs: ['columns', 'rows'],
+})
+export class DplTable {
+  protected el: HTMLDplTableElement;
+  constructor(c: ChangeDetectorRef, r: ElementRef, protected z: NgZone) {
+    c.detach();
+    this.el = r.nativeElement;
+  }
+}
+
+
+export declare interface DplTable extends Components.DplTable {}
 
 
