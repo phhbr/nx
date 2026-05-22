@@ -105,7 +105,7 @@ interface ParsedArgs {
   help: boolean;
 }
 
-function parseArgv(argv: string[]): ParsedArgs {
+export function parseArgv(argv: string[]): ParsedArgs {
   const result: ParsedArgs = {
     dryRun: false,
     format: 'human',
