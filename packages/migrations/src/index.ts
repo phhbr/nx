@@ -3,6 +3,7 @@ export type { MigrationEntry, RunOptions, RunResult } from './types';
 export { Formatter, type FormatterOptions } from './formatter';
 
 import { Formatter } from './formatter';
+import type { RunResult } from './types';
 
 /**
  * CLI entry point with support for JSON output and verbose logging.
@@ -53,12 +54,12 @@ export async function runCli(argv: string[]): Promise<void> {
       only: args.only,
     });
 
-    const { runMigrations } = await import('./runner');
+    const { runMigrations } = await import('./runner.js');
 
     formatter.info('Scanning files...');
     const startTime = Date.now();
 
-    const result = await runMigrations({
+    const result: RunResult = await runMigrations({
       dir: args.dir as string,
       from: args.from as string,
       to: args.to as string,
