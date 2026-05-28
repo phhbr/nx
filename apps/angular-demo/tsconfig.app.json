@@ -2,6 +2,7 @@
   "extends": "../../tsconfig.json",
   "compilerOptions": {
     "outDir": "../../dist/out-tsc/apps/angular-demo",
+    "moduleResolution": "bundler",
     "types": []
   },
   "files": ["src/main.ts"],
