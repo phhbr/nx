@@ -269,3 +269,209 @@ describe('runMigrations — validation', () => {
     ).rejects.toThrow('Invalid --to version');
   });
 });
+
+// ---------------------------------------------------------------------------
+// runMigrations — scoped dependency alignment
+// ---------------------------------------------------------------------------
+
+describe('runMigrations — scoped dependency alignment', () => {
+  it('updates scoped dependency versions in the closest package.json', async () => {
+    const projectDir = makeTempDir();
+    const srcDir = path.join(projectDir, 'src');
+    fs.mkdirSync(srcDir);
+    writeFile(srcDir, 'test.ts', 'const x = "NOOP";');
+
+    writeFile(
+      projectDir,
+      'package.json',
+      JSON.stringify(
+        {
+          dependencies: {
+            '@designsystem/dpl-web-components': '^7.0.0',
+            lodash: '^4.17.0',
+          },
+          devDependencies: {
+            '@designsystem/migrations': '~7.1.0',
+          },
+        },
+        null,
+        2,
+      ),
+    );
+
+    const result = await runMigrations(
+      {
+        dir: srcDir,
+        from: '7.0.0',
+        to: '8.0.0',
+      },
+      [],
+    );
+
+    const packageJson = JSON.parse(readFile(path.join(projectDir, 'package.json')));
+    expect(packageJson.dependencies['@designsystem/dpl-web-components']).toBe('8.0.0');
+    expect(packageJson.devDependencies['@designsystem/migrations']).toBe('8.0.0');
+    expect(packageJson.dependencies.lodash).toBe('^4.17.0');
+    expect(result.scopedDependencyUpdates?.dependencyCount).toBe(2);
+    expect(result.migrationsApplied.some((m) => m.id === 'update-scoped-dependencies')).toBe(true);
+    const dependencyUpdateMigration = result.migrationsApplied.find(
+      (m) => m.id === 'update-scoped-dependencies',
+    );
+    expect(dependencyUpdateMigration?.developerHint).toContain('pnpm install');
+  });
+
+  it('supports depsStrategy=caret', async () => {
+    const dir = makeTempDir();
+    writeFile(
+      dir,
+      'package.json',
+      JSON.stringify(
+        {
+          dependencies: {
+            '@designsystem/dpl-angular': '7.0.0',
+          },
+        },
+        null,
+        2,
+      ),
+    );
+
+    await runMigrations(
+      {
+        dir,
+        from: '7.0.0',
+        to: '8.0.0',
+        depsStrategy: 'caret',
+      },
+      [],
+    );
+
+    const packageJson = JSON.parse(readFile(path.join(dir, 'package.json')));
+    expect(packageJson.dependencies['@designsystem/dpl-angular']).toBe('^8.0.0');
+  });
+
+  it('preserves prefix for depsStrategy=preserve-prefix', async () => {
+    const dir = makeTempDir();
+    writeFile(
+      dir,
+      'package.json',
+      JSON.stringify(
+        {
+          dependencies: {
+            '@designsystem/foo': '^7.0.0',
+            '@designsystem/bar': '~7.0.0',
+            '@designsystem/baz': '7.0.0',
+          },
+        },
+        null,
+        2,
+      ),
+    );
+
+    await runMigrations(
+      {
+        dir,
+        from: '7.0.0',
+        to: '8.0.0',
+        depsStrategy: 'preserve-prefix',
+      },
+      [],
+    );
+
+    const packageJson = JSON.parse(readFile(path.join(dir, 'package.json')));
+    expect(packageJson.dependencies['@designsystem/foo']).toBe('^8.0.0');
+    expect(packageJson.dependencies['@designsystem/bar']).toBe('~8.0.0');
+    expect(packageJson.dependencies['@designsystem/baz']).toBe('8.0.0');
+  });
+
+  it('skips protocol-based versions and leaves workspace references untouched', async () => {
+    const dir = makeTempDir();
+    writeFile(
+      dir,
+      'package.json',
+      JSON.stringify(
+        {
+          dependencies: {
+            '@designsystem/dpl-web-components': 'workspace:*',
+            '@designsystem/dpl-angular': 'file:../dpl-angular',
+          },
+        },
+        null,
+        2,
+      ),
+    );
+
+    const result = await runMigrations(
+      {
+        dir,
+        from: '7.0.0',
+        to: '8.0.0',
+      },
+      [],
+    );
+
+    const packageJson = JSON.parse(readFile(path.join(dir, 'package.json')));
+    expect(packageJson.dependencies['@designsystem/dpl-web-components']).toBe('workspace:*');
+    expect(packageJson.dependencies['@designsystem/dpl-angular']).toBe('file:../dpl-angular');
+    expect(result.scopedDependencyUpdates).toBeUndefined();
+  });
+
+  it('can disable scoped dependency alignment via updateScopeDeps=false', async () => {
+    const dir = makeTempDir();
+    writeFile(
+      dir,
+      'package.json',
+      JSON.stringify(
+        {
+          dependencies: {
+            '@designsystem/dpl-web-components': '^7.0.0',
+          },
+        },
+        null,
+        2,
+      ),
+    );
+
+    await runMigrations(
+      {
+        dir,
+        from: '7.0.0',
+        to: '8.0.0',
+        updateScopeDeps: false,
+      },
+      [],
+    );
+
+    const packageJson = JSON.parse(readFile(path.join(dir, 'package.json')));
+    expect(packageJson.dependencies['@designsystem/dpl-web-components']).toBe('^7.0.0');
+  });
+
+  it('counts dependency-only updates even when no source transforms apply', async () => {
+    const dir = makeTempDir();
+    writeFile(
+      dir,
+      'package.json',
+      JSON.stringify(
+        {
+          dependencies: {
+            '@designsystem/dpl-web-components': '^7.0.0',
+          },
+        },
+        null,
+        2,
+      ),
+    );
+
+    const result = await runMigrations(
+      {
+        dir,
+        from: '7.0.0',
+        to: '8.0.0',
+      },
+      [],
+    );
+
+    expect(result.filesScanned).toBe(1);
+    expect(result.filesModified).toBe(1);
+  });
+});

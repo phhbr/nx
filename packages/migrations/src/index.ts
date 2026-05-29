@@ -61,6 +61,9 @@ export async function runCli(argv: string[]): Promise<void> {
       dir: args.dir,
       dryRun: args.dryRun,
       only: args.only,
+      updateScopeDeps: args.updateScopeDeps,
+      scope: args.scope,
+      depsStrategy: args.depsStrategy,
     });
 
     const { runMigrations } = await import('./runner.js');
@@ -74,6 +77,9 @@ export async function runCli(argv: string[]): Promise<void> {
       to: args.to as string,
       dryRun: args.dryRun,
       only: args.only,
+      updateScopeDeps: args.updateScopeDeps,
+      scope: args.scope,
+      depsStrategy: args.depsStrategy,
     });
 
     const duration = Date.now() - startTime;
@@ -97,6 +103,7 @@ export async function runCli(argv: string[]): Promise<void> {
         filesModified: result.filesModified,
         migrations: result.migrationsApplied,
         dryRun: args.dryRun,
+        scopedDependencyUpdates: result.scopedDependencyUpdates,
         developerHints: developerHints.length > 0 ? developerHints : undefined,
       },
       duration,
@@ -118,6 +125,9 @@ interface ParsedArgs {
   to?: string;
   dryRun: boolean;
   only?: string[];
+  updateScopeDeps: boolean;
+  scope: string;
+  depsStrategy: 'exact' | 'caret' | 'preserve-prefix';
   format: 'human' | 'json';
   verbose: boolean;
   color: boolean;
@@ -135,6 +145,13 @@ export function parseArgv(argv: string[]): ParsedArgs {
   const format = formatValue === 'json' || formatValue === 'human'
     ? formatValue
     : 'human';
+  const depsStrategyValue = getStringArg(parsed, 'depsStrategy');
+  const depsStrategy = depsStrategyValue === 'exact'
+    || depsStrategyValue === 'caret'
+    || depsStrategyValue === 'preserve-prefix'
+    ? depsStrategyValue
+    : 'exact';
+  const scope = getStringArg(parsed, 'scope') ?? '@designsystem';
 
   return {
     dir: getStringArg(parsed, 'dir'),
@@ -142,6 +159,9 @@ export function parseArgv(argv: string[]): ParsedArgs {
     to: getStringArg(parsed, 'to'),
     dryRun: getBooleanArg(parsed, ['dryRun', 'dry-run'], false),
     only,
+    updateScopeDeps: getBooleanArg(parsed, ['updateScopeDeps', 'update-scope-deps'], true),
+    scope,
+    depsStrategy,
     format,
     verbose: getBooleanArg(parsed, ['verbose', 'v'], false),
     color: getBooleanArg(parsed, ['color'], process.stdout.isTTY ?? true),
@@ -190,6 +210,23 @@ function createCliParser(argv: string[]) {
       type: 'string',
       describe: 'Comma-separated list of migration IDs to run (optional).',
     })
+    .option('updateScopeDeps', {
+      type: 'boolean',
+      alias: 'update-scope-deps',
+      default: true,
+      describe:
+        'Update scoped dependencies in the closest package.json to match --to (default: true).',
+    })
+    .option('scope', {
+      type: 'string',
+      default: '@designsystem',
+      describe: 'Package scope to align in dependency sections (default: @designsystem).',
+    })
+    .option('depsStrategy', {
+      type: 'string',
+      default: 'exact',
+      describe: 'How aligned versions are written: exact, caret, or preserve-prefix.',
+    })
     .option('dryRun', {
       type: 'boolean',
       alias: 'dry-run',
@@ -235,6 +272,10 @@ function createCliParser(argv: string[]) {
     .example(
       '$0 --from=8.0.0 --to=9.0.0 --dir=./src --only=rename-prop,rename-attr',
       'Run specific migrations only',
+    )
+    .example(
+      '$0 --from=8.0.0 --to=9.0.0 --dir=./src --scope=@designsystem --deps-strategy=caret',
+      'Run migrations and align scoped dependency versions',
     )
     .help(false)
     .version(false)

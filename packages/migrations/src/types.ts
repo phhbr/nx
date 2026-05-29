@@ -30,6 +30,25 @@ export interface RunOptions {
   dryRun?: boolean;
   /** If provided, only run migrations whose id is in this list. */
   only?: string[];
+  /**
+   * If true, update scoped dependencies in the closest package.json to match --to.
+   * Default: true.
+   */
+  updateScopeDeps?: boolean;
+  /**
+   * Scope prefix used to select dependencies for version alignment.
+   * Examples: "@designsystem" or "@designsystem/".
+   * Default: "@designsystem".
+   */
+  scope?: string;
+  /**
+   * Version formatting strategy when updating scoped dependencies.
+   * - exact: "8.0.0"
+   * - caret: "^8.0.0"
+   * - preserve-prefix: keeps ^ or ~ from the current value when present
+   * Default: "exact".
+   */
+  depsStrategy?: 'exact' | 'caret' | 'preserve-prefix';
 }
 
 /** Result returned by runMigrations(). */
@@ -37,4 +56,8 @@ export interface RunResult {
   filesScanned: number;
   filesModified: number;
   migrationsApplied: Array<{ id: string; filesModified: number; developerHint?: string }>;
+  scopedDependencyUpdates?: {
+    packageJsonPath: string;
+    dependencyCount: number;
+  };
 }

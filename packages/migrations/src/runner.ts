@@ -50,6 +50,131 @@ function normalizeExtensions(exts: string[]): string[] {
   return [...new Set(exts.map(normalizeExtension).filter(Boolean))];
 }
 
+function normalizeScope(scope: string): string {
+  const trimmed = scope.trim();
+  if (!trimmed) return '@designsystem';
+  return trimmed.endsWith('/') ? trimmed.slice(0, -1) : trimmed;
+}
+
+function isScopedDependency(packageName: string, scope: string): boolean {
+  return packageName.startsWith(`${scope}/`);
+}
+
+function isVersionProtocolValue(version: string): boolean {
+  return /^(workspace:|file:|link:|portal:)/.test(version);
+}
+
+function formatAlignedVersion(
+  targetVersion: string,
+  currentValue: string,
+  strategy: 'exact' | 'caret' | 'preserve-prefix',
+): string {
+  if (strategy === 'caret') {
+    return `^${targetVersion}`;
+  }
+
+  if (strategy === 'preserve-prefix') {
+    if (currentValue.startsWith('^')) return `^${targetVersion}`;
+    if (currentValue.startsWith('~')) return `~${targetVersion}`;
+  }
+
+  return targetVersion;
+}
+
+function findClosestPackageJson(startDir: string): string | undefined {
+  let currentDir = path.resolve(startDir);
+
+  // Guard against callers accidentally passing a file path instead of a directory.
+  if (fs.existsSync(currentDir) && fs.statSync(currentDir).isFile()) {
+    currentDir = path.dirname(currentDir);
+  }
+
+  while (true) {
+    const candidate = path.join(currentDir, 'package.json');
+    if (fs.existsSync(candidate) && fs.statSync(candidate).isFile()) {
+      return candidate;
+    }
+
+    const parent = path.dirname(currentDir);
+    if (parent === currentDir) {
+      return undefined;
+    }
+    currentDir = parent;
+  }
+}
+
+function alignScopedDependenciesInClosestPackageJson(
+  dir: string,
+  toVersion: string,
+  scope: string,
+  depsStrategy: 'exact' | 'caret' | 'preserve-prefix',
+  dryRun: boolean,
+): { filesScanned: number; filesModified: number; dependencyCount: number; packageJsonPath?: string } {
+  const packageJsonPath = findClosestPackageJson(dir);
+  if (!packageJsonPath) {
+    return { filesScanned: 0, filesModified: 0, dependencyCount: 0 };
+  }
+
+  const packageJsonRaw = fs.readFileSync(packageJsonPath, 'utf8');
+  const packageJson = JSON.parse(packageJsonRaw) as Record<string, unknown>;
+  const scopedPrefix = normalizeScope(scope);
+  let dependencyCount = 0;
+
+  const dependencySections = [
+    'dependencies',
+    'devDependencies',
+    'peerDependencies',
+    'optionalDependencies',
+  ];
+
+  for (const sectionName of dependencySections) {
+    const section = packageJson[sectionName];
+    if (!section || typeof section !== 'object' || Array.isArray(section)) {
+      continue;
+    }
+
+    const deps = section as Record<string, unknown>;
+    for (const [depName, depVersion] of Object.entries(deps)) {
+      if (!isScopedDependency(depName, scopedPrefix) || typeof depVersion !== 'string') {
+        continue;
+      }
+
+      if (isVersionProtocolValue(depVersion)) {
+        continue;
+      }
+
+      const nextValue = formatAlignedVersion(toVersion, depVersion, depsStrategy);
+      if (depVersion !== nextValue) {
+        deps[depName] = nextValue;
+        dependencyCount++;
+      }
+    }
+  }
+
+  if (dependencyCount === 0) {
+    return {
+      filesScanned: 1,
+      filesModified: 0,
+      dependencyCount: 0,
+      packageJsonPath,
+    };
+  }
+
+  if (dryRun) {
+    console.log(`[dry-run] Would modify: ${packageJsonPath}  (update-scoped-dependencies)`);
+  } else {
+    fs.writeFileSync(packageJsonPath, `${JSON.stringify(packageJson, null, 2)}\n`, 'utf8');
+    console.log(`Modified: ${packageJsonPath}  (update-scoped-dependencies)`);
+  }
+
+  return {
+    filesScanned: 1,
+    filesModified: 1,
+    dependencyCount,
+    packageJsonPath,
+  };
+}
+
 /**
  * Loads migrations from the manifest shipped inside @designsystem/dpl-web-components.
  *
@@ -130,7 +255,16 @@ export async function runMigrations(
   options: RunOptions,
   injectedMigrations?: MigrationEntry[],
 ): Promise<RunResult> {
-  const { dir, from, to, dryRun = false, only } = options;
+  const {
+    dir,
+    from,
+    to,
+    dryRun = false,
+    only,
+    updateScopeDeps = true,
+    scope = '@designsystem',
+    depsStrategy = 'exact',
+  } = options;
 
   if (!semver.valid(from)) {
     throw new Error(`Invalid --from version: "${from}"`);
@@ -144,22 +278,26 @@ export async function runMigrations(
 
   if (migrations.length === 0) {
     console.log(`No migrations to apply for ${from} → ${to}.`);
-    return { filesScanned: 0, filesModified: 0, migrationsApplied: [] };
   }
 
-  const allExtensions = normalizeExtensions(migrations.flatMap((m) => m.fileExtensions));
-  const extPart =
-    allExtensions.length === 1
-      ? allExtensions[0]
-      : `{${allExtensions.join(',')}}`;
+  const files: string[] = [];
+  if (migrations.length > 0) {
+    const allExtensions = normalizeExtensions(migrations.flatMap((m) => m.fileExtensions));
+    const extPart =
+      allExtensions.length === 1
+        ? allExtensions[0]
+        : `{${allExtensions.join(',')}}`;
 
-  // Normalize to forward slashes for glob pattern (glob expects / not \)
-  const resolvedDir = path.resolve(dir).split(path.sep).join('/');
-  const pattern = `${resolvedDir}/**/*.${extPart}`;
-  const files = await glob(pattern, {
-    ignore: ['**/node_modules/**', '**/dist/**'],
-    absolute: true,
-  });
+    // Normalize to forward slashes for glob pattern (glob expects / not \)
+    const resolvedDir = path.resolve(dir).split(path.sep).join('/');
+    const pattern = `${resolvedDir}/**/*.${extPart}`;
+    files.push(
+      ...(await glob(pattern, {
+        ignore: ['**/node_modules/**', '**/dist/**'],
+        absolute: true,
+      })),
+    );
+  }
 
   let totalFilesModified = 0;
   const migrationsApplied: RunResult['migrationsApplied'] = [];
@@ -193,9 +331,38 @@ export async function runMigrations(
     });
   }
 
+  let scopedDependencyUpdates: RunResult['scopedDependencyUpdates'];
+  let dependencyFilesScanned = 0;
+
+  if (updateScopeDeps) {
+    const depResult = alignScopedDependenciesInClosestPackageJson(
+      dir,
+      to,
+      scope,
+      depsStrategy,
+      dryRun,
+    );
+    dependencyFilesScanned = depResult.filesScanned;
+    totalFilesModified += depResult.filesModified;
+
+    if (depResult.filesModified > 0 && depResult.packageJsonPath) {
+      migrationsApplied.push({
+        id: 'update-scoped-dependencies',
+        filesModified: depResult.filesModified,
+        developerHint:
+          'Dependencies were updated in package.json. Run your package manager install (for this workspace: pnpm install) to refresh lockfile and node_modules.',
+      });
+      scopedDependencyUpdates = {
+        packageJsonPath: depResult.packageJsonPath,
+        dependencyCount: depResult.dependencyCount,
+      };
+    }
+  }
+
   return {
-    filesScanned: files.length,
+    filesScanned: files.length + dependencyFilesScanned,
     filesModified: totalFilesModified,
     migrationsApplied,
+    scopedDependencyUpdates,
   };
 }

@@ -27,6 +27,18 @@ describe('parseArgv — defaults', () => {
     expect(result.from).toBeUndefined();
     expect(result.to).toBeUndefined();
   });
+
+  it('enables scoped dependency updates by default', () => {
+    expect(parseArgv([]).updateScopeDeps).toBe(true);
+  });
+
+  it('defaults scope to @designsystem', () => {
+    expect(parseArgv([]).scope).toBe('@designsystem');
+  });
+
+  it('defaults depsStrategy to exact', () => {
+    expect(parseArgv([]).depsStrategy).toBe('exact');
+  });
 });
 
 describe('parseArgv — required flags (= syntax)', () => {
@@ -89,6 +101,14 @@ describe('parseArgv — boolean flags', () => {
   it('sets color false with --no-color', () => {
     expect(parseArgv(['--no-color']).color).toBe(false);
   });
+
+  it('sets updateScopeDeps false with --no-update-scope-deps', () => {
+    expect(parseArgv(['--no-update-scope-deps']).updateScopeDeps).toBe(false);
+  });
+
+  it('sets updateScopeDeps true with --update-scope-deps', () => {
+    expect(parseArgv(['--update-scope-deps']).updateScopeDeps).toBe(true);
+  });
 });
 
 describe('parseArgv — --format', () => {
@@ -129,6 +149,24 @@ describe('parseArgv — --only', () => {
   });
 });
 
+describe('parseArgv — scoped dependency options', () => {
+  it('parses --scope value', () => {
+    expect(parseArgv(['--scope=@designsystem']).scope).toBe('@designsystem');
+  });
+
+  it('parses --deps-strategy=caret', () => {
+    expect(parseArgv(['--deps-strategy=caret']).depsStrategy).toBe('caret');
+  });
+
+  it('parses --deps-strategy=preserve-prefix', () => {
+    expect(parseArgv(['--deps-strategy=preserve-prefix']).depsStrategy).toBe('preserve-prefix');
+  });
+
+  it('falls back to exact on unknown --deps-strategy values', () => {
+    expect(parseArgv(['--deps-strategy=invalid']).depsStrategy).toBe('exact');
+  });
+});
+
 describe('parseArgv — combined flags', () => {
   it('parses a realistic full command line', () => {
     const result = parseArgv([
@@ -148,6 +186,9 @@ describe('parseArgv — combined flags', () => {
       verbose: true,
       format: 'json',
       only: ['rename-prop', 'rename-attr'],
+      updateScopeDeps: true,
+      scope: '@designsystem',
+      depsStrategy: 'exact',
     });
   });
 });

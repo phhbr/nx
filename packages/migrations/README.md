@@ -7,6 +7,7 @@ Fuehre das Tool beim Upgrade aus. Es wendet automatisch alle passenden Codemods 
 
 - Dieses Paket ist der Runner, nicht die Quelle der Transforms.
 - Es liest `--from`, `--to`, `--dir` und optional `--only`.
+- Es kann Abhaengigkeiten im Scope `@designsystem` automatisch auf die `--to`-Version anheben.
 - Es unterstuetzt auch `--format=json`, `--verbose`, `--color` und `--no-color`.
 - Es laedt das Codemod-Manifest aus `@designsystem/dpl-web-components/codemods/manifest`.
 - Es scannt passende Dateien und fuehrt die gewaehlten Transforms in semver-Reihenfolge aus.
@@ -26,6 +27,7 @@ npx @designsystem/migrations --from=1.0.0 --to=2.0.0 --dir=./src
 
 Ersetze `./src` durch den Ordner, den du migrieren willst.
 Das Tool scannt rekursiv und ignoriert `node_modules` und `dist` automatisch.
+Fuer den Abhaengigkeitsabgleich wird die naechste `package.json` oberhalb von `--dir` verwendet.
 
 ---
 
@@ -47,6 +49,11 @@ Options:
   --to   <version>   Version, auf die du gehst (inclusive), z. B. 2.0.0
   --dir  <path>      Ordner mit Dateien, die migriert werden sollen (required)
   --only <id,...>    Kommagetrennte Liste von Migration-IDs (optional)
+  --update-scope-deps / --no-update-scope-deps
+                      Aktiviert/Deaktiviert Abhaengigkeitsabgleich im Scope (default: aktiviert)
+  --scope <scope>    Scope fuer Abhaengigkeitsabgleich (default: @designsystem)
+  --deps-strategy <exact|caret|preserve-prefix>
+                      Schreibweise fuer Zielversion (default: exact)
   --dry-run          Zeigt nur, was geaendert wuerde
   --format=json      Gibt das Ergebnis als JSON aus
   --verbose, -v      Zeigt mehr Logs waehrend der Ausfuehrung
@@ -188,6 +195,30 @@ npx @designsystem/migrations \
   --dir=./src \
   --only=rename-cell-type-icon-to-status
 ```
+
+## Scoped Dependencies automatisch auf --to anheben
+
+Standardverhalten: Abhaengigkeiten im Scope `@designsystem` werden in der naechsten `package.json`
+zur `--dir`-Angabe auf die Zielversion `--to` gesetzt.
+
+Beispiele:
+
+```bash
+# Exakte Version setzen (default)
+npx @designsystem/migrations --from=7.0.0 --to=8.0.0 --dir=./src
+
+# Mit Caret schreiben
+npx @designsystem/migrations --from=7.0.0 --to=8.0.0 --dir=./src --deps-strategy=caret
+
+# Prefix (^ / ~) beibehalten
+npx @designsystem/migrations --from=7.0.0 --to=8.0.0 --dir=./src --deps-strategy=preserve-prefix
+
+# Vollstaendig deaktivieren
+npx @designsystem/migrations --from=7.0.0 --to=8.0.0 --dir=./src --no-update-scope-deps
+```
+
+Wenn diese Funktion `package.json` aendert, gibt die CLI einen Developer Hint aus,
+danach den Paketmanager auszufuehren (im Workspace typischerweise `pnpm install`).
 
 ---
 
