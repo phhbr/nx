@@ -72,3 +72,6 @@ temp/
 # Keep local overrides out
 .vscode/
 .idea/
+
+.claude/worktrees
+.claude/settings.local.json
