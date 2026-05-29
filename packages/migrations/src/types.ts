@@ -8,6 +8,8 @@ export interface MigrationEntry {
   description: string;
   /** File extensions this migration applies to (with or without leading dot). */
   fileExtensions: string[];
+  /** Optional: Developer guidance for manual cleanup or follow-up steps after migration. */
+  developerHint?: string;
   /**
    * Transform function — takes file source and absolute file path,
    * returns the transformed source. Returns the original source unchanged
@@ -34,5 +36,5 @@ export interface RunOptions {
 export interface RunResult {
   filesScanned: number;
   filesModified: number;
-  migrationsApplied: Array<{ id: string; filesModified: number }>;
+  migrationsApplied: Array<{ id: string; filesModified: number; developerHint?: string }>;
 }

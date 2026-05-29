@@ -28,6 +28,8 @@ const manifest: CodemodEntry[] = [
       'Renames CellType "icon" → "status". Use "status" for status indicator cells.',
     fileExtensions: ['.ts', '.tsx', '.js', '.jsx', '.html', '.vue'],
     transformPath: './transforms/v2.0.0/rename-cell-type-icon-to-status/index',
+    developerHint:
+      'Manual review required: The color property defaults to "gray". Verify each migrated status cell and adjust the color to match the intended status (yellow/green/red/blue/gray). Also check dynamic values (computed properties) as they are not automatically migrated.',
   },
 ];
 

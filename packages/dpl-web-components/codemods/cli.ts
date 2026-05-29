@@ -188,6 +188,11 @@ async function main(): Promise<void> {
       extensions: entry.fileExtensions,
     });
 
+    // Display developer hint if present
+    if (entry.developerHint) {
+      formatter.warn(`Developer hint: ${entry.developerHint}`);
+    }
+
     // The transform module path is relative to this manifest; after compilation
     // both are in codemods/dist/ so the path resolves correctly.
     const transformModule = require(path.resolve(__dirname, entry.transformPath)) as {
@@ -232,6 +237,7 @@ async function main(): Promise<void> {
         filesModified,
         modifiedFiles: args.format === 'json' ? modifiedFiles : undefined,
         dryRun: args.dryRun,
+        developerHint: entry.developerHint,
       },
       duration,
     );

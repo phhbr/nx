@@ -73,6 +73,7 @@ export async function loadMigrationsFromManifest(): Promise<MigrationEntry[]> {
       description: string;
       fileExtensions: string[];
       transformPath: string;
+      developerHint?: string;
     }>;
   };
 
@@ -89,6 +90,7 @@ export async function loadMigrationsFromManifest(): Promise<MigrationEntry[]> {
         id: entry.id,
         description: entry.description,
         fileExtensions: entry.fileExtensions,
+        developerHint: entry.developerHint,
         transform: transformModule.transform,
       };
     }),
@@ -184,7 +186,11 @@ export async function runMigrations(
       }
     }
 
-    migrationsApplied.push({ id: migration.id, filesModified: migrationFilesModified });
+    migrationsApplied.push({
+      id: migration.id,
+      filesModified: migrationFilesModified,
+      developerHint: migration.developerHint,
+    });
   }
 
   return {

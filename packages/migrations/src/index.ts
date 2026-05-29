@@ -69,10 +69,18 @@ export async function runCli(argv: string[]): Promise<void> {
 
     const duration = Date.now() - startTime;
 
-    formatter.info(`Processing complete`, {
-      filesScanned: result.filesScanned,
-      filesModified: result.filesModified,
-    });
+    // Collect developer hints from migrations that had changes
+    const developerHints = result.migrationsApplied
+      .filter((m) => m.developerHint && m.filesModified > 0)
+      .map((m) => ({ id: m.id, hint: m.developerHint }));
+
+    if (developerHints.length > 0) {
+      formatter.warn(
+        `Developer hints for manual follow-up: ${developerHints
+          .map((h) => `${h.id}: ${h.hint}`)
+          .join('; ')}`,
+      );
+    }
 
     formatter.result(
       {
@@ -80,6 +88,7 @@ export async function runCli(argv: string[]): Promise<void> {
         filesModified: result.filesModified,
         migrations: result.migrationsApplied,
         dryRun: args.dryRun,
+        developerHints: developerHints.length > 0 ? developerHints : undefined,
       },
       duration,
     );

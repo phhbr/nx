@@ -268,11 +268,24 @@ Noetige Testfaelle, bevor ein Transform produktionsreif ist:
   description: 'One-line description shown in CLI output.',
   fileExtensions: ['tsx', 'jsx', 'ts', 'js', 'html', 'vue'],
   transformPath: './transforms/vX.Y.Z/your-migration-id/index',
+  developerHint: 'Optional: Message for developers about manual follow-up steps required.',
 }
 ```
 
 `transformPath` ist relativ zur Manifest-Datei.
 Nach `tsc` liegen Manifest und Transforms beide in `codemods/dist/`, deshalb bleibt der relative Pfad gleich.
+
+**Optional: `developerHint`** — Falls dein Transform automatisiert nicht alles loesen kann (z. B. dynamische Werte, Stilfein-Tuning, oder komplexe Migrationen), nutze das Feld `developerHint` um Entwicklern mitzuteilen, was sie manuell ueberpruefen muessen.
+
+Beispiel:
+```typescript
+developerHint: 'Manual review required: Color defaults to "gray". Verify each cell and adjust to "yellow"/"green"/"red"/"blue" as needed.'
+```
+
+Wenn der Transform Dateien aendert, wird die Nachricht:
+- **Bei CLI-Ausfuehrung** als `⚠️ ` (gelbe Warnung) angezeigt
+- **Im JSON-Output** unter dem Feld `developerHint` des Ergebnisses enthalten
+- **In der Migrations-CLI** werden nur Hints fuer Migrations mit Aenderungen angezeigt
 
 ### 4. Bauen und testen
 

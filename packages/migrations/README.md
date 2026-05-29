@@ -96,6 +96,59 @@ npx migrations --from=1.0.0 --to=2.0.0 --dir=./src
 | --- | --- | --- |
 | < 2.0.0 -> >= 2.0.0 | `rename-cell-type-icon-to-status` | Benennt `CellType`-Wert `icon` in `status` um |
 
+---
+
+## Developer Hints – Manuell erforderliche Schritte
+
+Viele Migrations koennen automatisiert nicht alles vollstaendig loesen.
+In diesen Faellen werden **Developer Hints** angezeigt — Hinweise, was du manuell ueberpruefen oder anpassen musst.
+
+### Wann werden Hints angezeigt?
+
+- **CLI-Ausgabe**: Der Hint wird als gelbe Warnung (⚠️) gedruckt
+- **Dry-Run**: Hints werden auch in `--dry-run` Modus angezeigt
+- **JSON-Output**: Im JSON-Ergebnis unter `developerHints` Liste
+- **Nur bei Aenderungen**: Der Hint wird nur gezeigt, wenn eine Migration tatsaechlich Dateien geaendert hat
+
+### Beispiel
+
+```bash
+$ npx @designsystem/migrations --from=1.0.0 --to=2.0.0 --dir=./src
+
+⚠️ Developer hint: Manual review required: Color defaults to "gray". 
+   Verify each cell and adjust to "yellow"/"green"/"red"/"blue" as needed.
+
+============================================================
+Files scanned:  142
+Files modified: 2
+...
+```
+
+### JSON-Output mit Hints
+
+```bash
+npx @designsystem/migrations --from=1.0.0 --to=2.0.0 --dir=./src --format=json
+```
+
+```json
+{
+  "success": true,
+  "result": {
+    "filesScanned": 142,
+    "filesModified": 2,
+    "migrations": [...],
+    "developerHints": [
+      {
+        "id": "rename-cell-type-icon-to-status",
+        "hint": "Manual review required: Color defaults to \"gray\". Verify each cell and adjust as needed."
+      }
+    ]
+  }
+}
+```
+
+---
+
 ### Unterstuetzte Dateitypen
 
 | Endung | Strategie |
