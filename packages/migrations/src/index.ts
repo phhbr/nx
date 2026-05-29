@@ -228,10 +228,5 @@ function createCliParser(argv: string[]) {
     )
     .help(false)
     .version(false)
-    .strict(false)
-    .parserConfiguration({
-      'camel-case-expansion': true,
-      'strip-aliased': true,
-      'strip-dashed': true,
-    });
+    .strict(false);
 }
