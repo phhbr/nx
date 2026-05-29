@@ -6,6 +6,9 @@ import yargs from 'yargs/yargs';
 import { Formatter } from './formatter';
 import type { RunResult } from './types';
 
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const packageJson = require('../package.json') as { version: string };
+
 /**
  * CLI entry point with support for JSON output and verbose logging.
  *
@@ -22,8 +25,13 @@ import type { RunResult } from './types';
 export async function runCli(argv: string[]): Promise<void> {
   const args = parseArgv(argv);
 
+  if (args.version) {
+    console.log(packageJson.version);
+    process.exit(0);
+  }
+
   if (args.help) {
-    printHelp();
+    createCliParser([]).showHelp();
     process.exit(0);
   }
 
@@ -42,7 +50,7 @@ export async function runCli(argv: string[]): Promise<void> {
     if (missing.length > 0) {
       formatter.error(`Missing required arguments: ${missing.join(', ')}`);
       if (args.format !== 'json') {
-        printHelp();
+        createCliParser([]).showHelp();
       }
       process.exit(1);
     }
@@ -114,6 +122,7 @@ interface ParsedArgs {
   verbose: boolean;
   color: boolean;
   help: boolean;
+  version: boolean;
 }
 
 export function parseArgv(argv: string[]): ParsedArgs {
@@ -137,6 +146,7 @@ export function parseArgv(argv: string[]): ParsedArgs {
     verbose: getBooleanArg(parsed, ['verbose', 'v'], false),
     color: getBooleanArg(parsed, ['color'], process.stdout.isTTY ?? true),
     help: getBooleanArg(parsed, ['help', 'h'], false),
+    version: getBooleanArg(parsed, ['version'], false),
   };
 }
 
@@ -159,11 +169,6 @@ function getBooleanArg(
 
   return fallback;
 }
-
-function printHelp(): void {
-  createCliParser([]).showHelp();
-}
-
 
 function createCliParser(argv: string[]) {
   return yargs(argv)
@@ -212,6 +217,11 @@ function createCliParser(argv: string[]) {
       alias: 'h',
       default: false,
       describe: 'Show this help message.',
+    })
+    .option('version', {
+      type: 'boolean',
+      default: false,
+      describe: 'Show version number.',
     })
     .example('$0 --from=8.0.0 --to=9.0.0 --dir=./src', 'Standard migration')
     .example(
