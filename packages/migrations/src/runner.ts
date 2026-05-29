@@ -151,7 +151,9 @@ export async function runMigrations(
       ? allExtensions[0]
       : `{${allExtensions.join(',')}}`;
 
-  const pattern = path.join(path.resolve(dir), `**/*.${extPart}`);
+  // Normalize to forward slashes for glob pattern (glob expects / not \)
+  const resolvedDir = path.resolve(dir).split(path.sep).join('/');
+  const pattern = `${resolvedDir}/**/*.${extPart}`;
   const files = await glob(pattern, {
     ignore: ['**/node_modules/**', '**/dist/**'],
     absolute: true,
