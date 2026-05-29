@@ -7,11 +7,25 @@ import type { MigrationEntry, RunOptions, RunResult } from './types';
 /**
  * Converts an absolute file path to a file:// URL.
  * This is required for proper module resolution on Windows with ESM loaders.
+ * 
+ * Windows: C:\path\to\file → file:///C:/path/to/file
+ * Unix: /path/to/file → file:///path/to/file
  */
 function pathToFileUrl(filePath: string): string {
-  // Convert backslashes to forward slashes and prepend file://
-  const normalizedPath = filePath.replace(/\\/g, '/');
-  return `file://${normalizedPath.startsWith('/') ? normalizedPath : '/' + normalizedPath}`;
+  // Normalize to forward slashes
+  let normalized = filePath.replace(/\\/g, '/');
+  
+  // Handle Windows drive letters (C: → /C:)
+  if (/^[a-zA-Z]:/.test(normalized)) {
+    normalized = '/' + normalized;
+  }
+  
+  // Ensure it starts with / for proper URL format
+  if (!normalized.startsWith('/')) {
+    normalized = '/' + normalized;
+  }
+  
+  return `file://${normalized}`;
 }
 
 function normalizeExtension(ext: string): string {
