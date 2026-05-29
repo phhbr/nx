@@ -2,6 +2,7 @@ export { runMigrations, loadMigrationsFromManifest, selectMigrations } from './r
 export type { MigrationEntry, RunOptions, RunResult } from './types';
 export { Formatter, type FormatterOptions } from './formatter';
 
+import yargs from 'yargs/yargs';
 import { Formatter } from './formatter';
 import type { RunResult } from './types';
 
@@ -116,93 +117,121 @@ interface ParsedArgs {
 }
 
 export function parseArgv(argv: string[]): ParsedArgs {
-  const result: ParsedArgs = {
-    dryRun: false,
-    format: 'human',
-    verbose: false,
-    color: process.stdout.isTTY ?? true,
-    help: false,
+  const parsed = createCliParser(argv).parseSync();
+  const onlyValue = getStringArg(parsed, 'only');
+  const only = typeof onlyValue === 'string'
+    ? onlyValue.split(',').map((item: string) => item.trim()).filter(Boolean)
+    : undefined;
+  const formatValue = getStringArg(parsed, 'format');
+  const format = formatValue === 'json' || formatValue === 'human'
+    ? formatValue
+    : 'human';
+
+  return {
+    dir: getStringArg(parsed, 'dir'),
+    from: getStringArg(parsed, 'from'),
+    to: getStringArg(parsed, 'to'),
+    dryRun: getBooleanArg(parsed, ['dryRun', 'dry-run'], false),
+    only,
+    format,
+    verbose: getBooleanArg(parsed, ['verbose', 'v'], false),
+    color: getBooleanArg(parsed, ['color'], process.stdout.isTTY ?? true),
+    help: getBooleanArg(parsed, ['help', 'h'], false),
   };
+}
 
-  for (let i = 0; i < argv.length; i++) {
-    const arg = argv[i];
+function getStringArg(parsed: Record<string, unknown>, key: string): string | undefined {
+  const value = parsed[key];
+  return typeof value === 'string' ? value : undefined;
+}
 
-    if (arg === '--dry-run' || arg === '--dryRun') {
-      result.dryRun = true;
-    } else if (arg === '--verbose' || arg === '-v') {
-      result.verbose = true;
-    } else if (arg === '--help' || arg === '-h') {
-      result.help = true;
-    } else if (arg === '--color') {
-      result.color = true;
-    } else if (arg === '--no-color') {
-      result.color = false;
-    } else if (arg.startsWith('--format=')) {
-      const format = arg.slice(9);
-      if (format === 'json' || format === 'human') {
-        result.format = format;
-      }
-    } else {
-      const eqIdx = arg.indexOf('=');
-      if (eqIdx !== -1) {
-        const key = arg.slice(2, eqIdx);
-        const value = arg.slice(eqIdx + 1);
-        assignArg(result, key, value);
-      } else if (arg.startsWith('--') && i + 1 < argv.length && !argv[i + 1].startsWith('--')) {
-        const key = arg.slice(2);
-        const value = argv[++i];
-        assignArg(result, key, value);
-      }
+function getBooleanArg(
+  parsed: Record<string, unknown>,
+  keys: string[],
+  fallback: boolean,
+): boolean {
+  for (const key of keys) {
+    const value = parsed[key];
+    if (typeof value === 'boolean') {
+      return value;
     }
   }
 
-  return result;
-}
-
-function assignArg(result: ParsedArgs, key: string, value: string): void {
-  switch (key) {
-    case 'dir':
-      result.dir = value;
-      break;
-    case 'from':
-      result.from = value;
-      break;
-    case 'to':
-      result.to = value;
-      break;
-    case 'only':
-      result.only = value.split(',').map((s) => s.trim()).filter(Boolean);
-      break;
-  }
+  return fallback;
 }
 
 function printHelp(): void {
-  console.log(`
-Usage: migrations --from=<version> --to=<version> --dir=<path> [options]
+  createCliParser([]).showHelp();
+}
 
-Options:
-  --from=<version>   Starting version (exclusive lower bound). e.g. 8.0.0
-  --to=<version>     Target version (inclusive upper bound). e.g. 9.0.0
-  --dir=<path>       Directory to scan for files to transform (required).
-  --only=<id,...>    Comma-separated list of migration IDs to run (optional).
-  --dry-run          Show which files would be modified without writing them.
-  --format=json      Output results as JSON (default: human-readable).
-  --verbose, -v      Show detailed logs and progress information.
-  --color            Force color output (default: auto-detect TTY).
-  --no-color         Disable color output.
-  --help, -h         Show this help message.
 
-Examples:
-  # Standard migration
-  migrations --from=8.0.0 --to=9.0.0 --dir=./src
-
-  # Dry run with verbose output
-  npx @designsystem/migrations --from=8.0.0 --to=9.0.0 --dir=./src --dry-run --verbose
-
-  # JSON output for CI/CD integration
-  pnpm dlx @designsystem/migrations --from=8.0.0 --to=9.0.0 --dir=./src --format=json
-
-  # Run specific migrations only
-  migrations --from=8.0.0 --to=9.0.0 --dir=./src --only=rename-prop,rename-attr
-`);
+function createCliParser(argv: string[]) {
+  return yargs(argv)
+    .scriptName('migrations')
+    .usage('Usage: $0 --from=<version> --to=<version> --dir=<path> [options]')
+    .option('from', {
+      type: 'string',
+      describe: 'Starting version (exclusive lower bound). e.g. 8.0.0',
+    })
+    .option('to', {
+      type: 'string',
+      describe: 'Target version (inclusive upper bound). e.g. 9.0.0',
+    })
+    .option('dir', {
+      type: 'string',
+      describe: 'Directory to scan for files to transform (required).',
+    })
+    .option('only', {
+      type: 'string',
+      describe: 'Comma-separated list of migration IDs to run (optional).',
+    })
+    .option('dryRun', {
+      type: 'boolean',
+      alias: 'dry-run',
+      default: false,
+      describe: 'Show which files would be modified without writing them.',
+    })
+    .option('format', {
+      type: 'string',
+      default: 'human',
+      describe: 'Output results as json or human (default: human-readable).',
+    })
+    .option('verbose', {
+      type: 'boolean',
+      alias: 'v',
+      default: false,
+      describe: 'Show detailed logs and progress information.',
+    })
+    .option('color', {
+      type: 'boolean',
+      default: process.stdout.isTTY ?? true,
+      describe: 'Force color output (default: auto-detect TTY).',
+    })
+    .option('help', {
+      type: 'boolean',
+      alias: 'h',
+      default: false,
+      describe: 'Show this help message.',
+    })
+    .example('$0 --from=8.0.0 --to=9.0.0 --dir=./src', 'Standard migration')
+    .example(
+      '$0 --from=8.0.0 --to=9.0.0 --dir=./src --dry-run --verbose',
+      'Dry run with verbose output',
+    )
+    .example(
+      '$0 --from=8.0.0 --to=9.0.0 --dir=./src --format=json',
+      'JSON output for CI/CD integration',
+    )
+    .example(
+      '$0 --from=8.0.0 --to=9.0.0 --dir=./src --only=rename-prop,rename-attr',
+      'Run specific migrations only',
+    )
+    .help(false)
+    .version(false)
+    .strict(false)
+    .parserConfiguration({
+      'camel-case-expansion': true,
+      'strip-aliased': true,
+      'strip-dashed': true,
+    });
 }

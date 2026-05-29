@@ -26,7 +26,8 @@
   "dependencies": {
     "@designsystem/dpl-web-components": "workspace:*",
     "glob": "^13.0.6",
-    "semver": "^7.7.2"
+    "semver": "^7.7.2",
+    "yargs": "17.7.2"
   },
   "devDependencies": {
     "@types/jest": "latest",
