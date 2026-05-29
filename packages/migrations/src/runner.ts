@@ -1,8 +1,19 @@
 import * as fs from 'fs';
 import * as path from 'path';
+import { fileURLToPath } from 'url';
 import { glob } from 'glob';
 import * as semver from 'semver';
 import type { MigrationEntry, RunOptions, RunResult } from './types';
+
+/**
+ * Converts an absolute file path to a file:// URL.
+ * This is required for proper module resolution on Windows with ESM loaders.
+ */
+function pathToFileUrl(filePath: string): string {
+  // Convert backslashes to forward slashes and prepend file://
+  const normalizedPath = filePath.replace(/\\/g, '/');
+  return `file://${normalizedPath.startsWith('/') ? normalizedPath : '/' + normalizedPath}`;
+}
 
 function normalizeExtension(ext: string): string {
   const trimmed = ext.trim().toLowerCase();
@@ -24,7 +35,7 @@ function normalizeExtensions(exts: string[]): string[] {
  * Each entry's transformPath is resolved relative to the manifest file,
  * so the compiled transform modules are found at codemods/dist/transforms/...
  */
-export function loadMigrationsFromManifest(): MigrationEntry[] {
+export async function loadMigrationsFromManifest(): Promise<MigrationEntry[]> {
   const manifestPath = require.resolve(
     '@designsystem/dpl-web-components/codemods/manifest',
   );
@@ -42,20 +53,25 @@ export function loadMigrationsFromManifest(): MigrationEntry[] {
 
   const manifestDir = path.dirname(manifestPath);
 
-  return manifestModule.default.map((entry) => {
-    const absTransformPath = path.resolve(manifestDir, entry.transformPath);
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const transformModule = require(absTransformPath) as {
-      transform: (source: string, filePath: string) => string;
-    };
-    return {
-      version: entry.version,
-      id: entry.id,
-      description: entry.description,
-      fileExtensions: entry.fileExtensions,
-      transform: transformModule.transform,
-    };
-  });
+  const migrations = await Promise.all(
+    manifestModule.default.map(async (entry) => {
+      const absTransformPath = path.resolve(manifestDir, entry.transformPath);
+      // Convert absolute path to file:// URL for ESM compatibility on Windows
+      const transformFileUrl = pathToFileUrl(absTransformPath);
+      const transformModule = (await import(transformFileUrl)) as {
+        transform: (source: string, filePath: string) => string;
+      };
+      return {
+        version: entry.version,
+        id: entry.id,
+        description: entry.description,
+        fileExtensions: entry.fileExtensions,
+        transform: transformModule.transform,
+      };
+    }),
+  );
+
+  return migrations;
 }
 
 /**
@@ -98,7 +114,7 @@ export async function runMigrations(
     throw new Error(`Invalid --to version: "${to}"`);
   }
 
-  const allMigrations = injectedMigrations ?? loadMigrationsFromManifest();
+  const allMigrations = injectedMigrations ?? (await loadMigrationsFromManifest());
   const migrations = selectMigrations(allMigrations, from, to, only);
 
   if (migrations.length === 0) {
