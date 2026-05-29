@@ -1,7 +1,12 @@
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
-import { runMigrations, selectMigrations } from '../src/runner';
+import {
+  pathToFileUrl,
+  resolveTransformImportSpecifier,
+  runMigrations,
+  selectMigrations,
+} from '../src/runner';
 import type { MigrationEntry } from '../src/types';
 
 // ---------------------------------------------------------------------------
@@ -38,6 +43,44 @@ const stubAt300: MigrationEntry = {
   fileExtensions: ['ts'],
   transform: (source: string) => source.replace(/BAZ/g, 'QUX'),
 };
+
+// ---------------------------------------------------------------------------
+// path and import specifier helpers
+// ---------------------------------------------------------------------------
+
+describe('runner path helpers', () => {
+  it('converts unix paths to file URLs', () => {
+    expect(pathToFileUrl('/tmp/transforms/index.js')).toBe('file:///tmp/transforms/index.js');
+  });
+
+  it('converts windows paths to file URLs', () => {
+    expect(pathToFileUrl('C:\\repo\\transforms\\index.js')).toBe(
+      'file:///C:/repo/transforms/index.js',
+    );
+  });
+
+  it('adds .js extension when transform path has no extension', () => {
+    const specifier = resolveTransformImportSpecifier(
+      '/repo/codemods/dist',
+      './transforms/v2.0.0/example/index',
+    );
+
+    expect(specifier).toBe(
+      'file:///repo/codemods/dist/transforms/v2.0.0/example/index.js',
+    );
+  });
+
+  it('keeps .js extension when already present', () => {
+    const specifier = resolveTransformImportSpecifier(
+      '/repo/codemods/dist',
+      './transforms/v2.0.0/example/index.js',
+    );
+
+    expect(specifier).toBe(
+      'file:///repo/codemods/dist/transforms/v2.0.0/example/index.js',
+    );
+  });
+});
 
 // ---------------------------------------------------------------------------
 // selectMigrations

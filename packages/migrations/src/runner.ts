@@ -11,7 +11,7 @@ import type { MigrationEntry, RunOptions, RunResult } from './types';
  * Windows: C:\path\to\file → file:///C:/path/to/file
  * Unix: /path/to/file → file:///path/to/file
  */
-function pathToFileUrl(filePath: string): string {
+export function pathToFileUrl(filePath: string): string {
   // Normalize to forward slashes
   let normalized = filePath.replace(/\\/g, '/');
   
@@ -26,6 +26,18 @@ function pathToFileUrl(filePath: string): string {
   }
   
   return `file://${normalized}`;
+}
+
+export function resolveTransformImportSpecifier(
+  manifestDir: string,
+  transformPath: string,
+): string {
+  const absTransformPath = path.resolve(manifestDir, transformPath);
+  const pathWithJsExtension = absTransformPath.endsWith('.js')
+    ? absTransformPath
+    : `${absTransformPath}.js`;
+
+  return pathToFileUrl(pathWithJsExtension);
 }
 
 function normalizeExtension(ext: string): string {
@@ -68,9 +80,7 @@ export async function loadMigrationsFromManifest(): Promise<MigrationEntry[]> {
 
   const migrations = await Promise.all(
     manifestModule.default.map(async (entry) => {
-      const absTransformPath = path.resolve(manifestDir, entry.transformPath);
-      // Convert absolute path to file:// URL for ESM compatibility on Windows
-      const transformFileUrl = pathToFileUrl(absTransformPath);
+      const transformFileUrl = resolveTransformImportSpecifier(manifestDir, entry.transformPath);
       const transformModule = (await import(transformFileUrl)) as {
         transform: (source: string, filePath: string) => string;
       };
