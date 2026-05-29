@@ -1,6 +1,5 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { fileURLToPath } from 'url';
 import { glob } from 'glob';
 import * as semver from 'semver';
 import type { MigrationEntry, RunOptions, RunResult } from './types';
